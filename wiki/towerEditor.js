@@ -94,6 +94,7 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<h3 class="te-h">겹침 분석</h3><div class="row" style="gap:6px"><button class="btn" id="teov">기존 타워와 비교</button></div><div id="teovout"><p class="count">단어, 디자인, 능력이 기존 ' + WORDS.length + '개 타워와 얼마나 겹치는지 검사한다.</p></div>' +
   '<h3 class="te-h">저장</h3><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>' +
   '</section></div>' +
+  '<h2>테스터 제출 코드 불러오기</h2><p>크리에이터 페이지에서 받은 WTDT1. 코드를 붙여 넣으면 편집기로 불러온다. 확인한 뒤 타워 저장을 누르면 저장소에 들어간다.</p><div class="row"><input class="inp" id="teimp" placeholder="WTDT1.…" style="flex:1 1 260px" aria-label="타워 제출 코드"><button class="btn" id="teimpb">불러오기</button></div>' +
   '<h2>저장된 타워</h2><div class="saved" id="tesaved"><p class="count">저장된 타워를 불러오는 중입니다.</p></div>' +
   '<h2>밸런스 계산 방식</h2><ul><li><b>공격력</b>은 직접 정한다. 단어의 공식 공격력(글자 점수 합 × 3 × (1 + 0.15 × (글자 수 − 3)))과 비교한 비율이 <b>배율</b>이 되고, 배율이 곧 비용 배율이다. 공격력을 올리면 비용도 오른다. 배율 칸을 고치면 공격력이 거꾸로 맞춰진다. 공격 간격과 사거리 기본값은 ' + link("words","일반 단어 공식") + '을 따른다.</li><li><b>전투력</b> = 초당 피해 × 공격 방식 계수 × √(사거리 / 2.5) × (1 + 효과 가치) + 지원 가치.</li><li>효과 가치: 화상 1%당 0.03, 둔화 0.012, 기절 0.01, 연쇄 1회 0.45, 독 1중첩 0.15, 넉백 1칸 0.8, 즉사 1%당 0.03, 방어 무시 0.004, 치명타 0.01.</li><li>지원 가치: 주변 강화 1%당 3.2 × √배율, 골드 1G당 5, 생명 회복 1당 55 (KING, COIN, HEAL 기준으로 맞춤).</li><li><b>적정 기준</b>: 전투력 ÷ 건설 비용이 0.85~1.15. 기존 타워 FIRE가 약 0.96이다.</li><li>자동 조정 순서: ① 공격 간격(0.2~3.5초)으로 맞춘다 ② 그래도 벗어나면 효과 수치를 같은 비율로 줄이거나 늘린다 ③ 마지막으로 배율(= 비용)을 0.4~2.5 안에서 고친다. 지원(오라) 타워는 배율부터 맞춘다. 목표는 0.92~1.08.</li></ul>';
 }, after:function(){ teInit(); }};
@@ -220,6 +221,7 @@ function teInit(){
     try { await teDb.collection("towers").doc(TE.word).set(body); toast("‘" + TE.word + "’ 타워를 저장했습니다."); }
     catch (e){ toast(e && e.code === "quota_exceeded" ? "저장 공간이 가득 찼습니다. 안 쓰는 타워를 지워 주세요." : "저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요."); }
   };
+  if ($("teimpb")) $("teimpb").onclick = function(){ var c = $("teimp").value.trim(); if (c.indexOf("WTDT1.") !== 0){ toast("WTDT1. 으로 시작하는 타워 코드가 아닙니다."); return; } try { var d = b64d(c.slice(6)); TE = towerFromData(d); render("toweredit"); window.scrollTo(0, 0); toast("‘" + TE.word + "’ 타워를 불러왔습니다" + (d.author ? " (만든 사람: " + String(d.author).slice(0, 20) + ")" : "") + ". 확인 후 저장해 주세요."); } catch (e){ toast("코드가 깨져 있어 읽을 수 없습니다."); } };
   form(); swatches(); tools(); recs(); bal(); preview();
   teConnect();
 }
@@ -256,4 +258,19 @@ function teConnect(){
     var s = document.getElementById("tedb"); if (s) s.textContent = "저장소에 연결됨. 저장한 타워는 이 위키를 여는 사람 모두와 Claude가 볼 수 있습니다.";
     try { db.collection("towers").orderBy("updatedAt", "desc").limit(200).onSnapshot(function(snap){ teDocs = snap.docs; teRenderSaved(); }, function(){ var b = document.getElementById("tesaved"); if (b) b.innerHTML = '<p class="count">저장된 타워 목록을 불러오지 못했습니다. 페이지를 새로 고쳐 주세요.</p>'; }); } catch (e){ none(); }
   }, none);
+}
+
+function b64e(o){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
+function b64d(s){ return JSON.parse(decodeURIComponent(escape(atob(s)))); }
+/* ---------- 타워 불러오기 ---------- */
+function towerFromData(t){
+  var kind = EL[t.kind] ? t.kind : "fire", fx = {};
+  if (t.fx && typeof t.fx === "object") TE_FX.forEach(function(f){ var v = +t.fx[f[0]]; if (v > 0) fx[f[0]] = Math.min(f[4], v); });
+  var x = teDefault();
+  x.word = String(t.word || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); x.kind = kind; x.concept = String(t.concept || "").slice(0, 300);
+  x.mode = TE_MODES.some(function(m){ return m[0] === t.mode; }) ? t.mode : "single"; x.radius = Math.min(3, Math.max(0, +t.radius || 0));
+  x.mult = Math.min(5, Math.max(0.1, +t.mult || 1)); x.interval = Math.min(4, Math.max(0.1, +t.interval || 1)); x.range = Math.min(7, Math.max(1, +t.range || 2));
+  x.dmg = +t.dmg > 0 ? Math.min(2000, +t.dmg) : +(teBaseAtk(x) * x.mult).toFixed(1); x.dtype = ["physical","magic","true"].indexOf(t.dtype) >= 0 ? t.dtype : "physical";
+  x.fx = fx; x.lv5 = String(t.lv5 || "").slice(0, 120); x.px = t.pixels ? teDecode(t.pixels) : x.px; x.color = EL[kind].m;
+  return x;
 }
