@@ -11,7 +11,7 @@ i=te.index('<h3 class="te-h">저장</h3>'); j=te.index('<p class="count" id="ted
 te=te[:i]+'<h3 class="te-h">제출</h3><p class="te-desc"><b>내 작품에 저장</b>은 이 브라우저에만 임시로 남긴다. <b>제출 코드 만들기</b>를 누르면 개발자에게 보낼 코드가 나온다. 밸런스가 적정이어야 코드가 만들어진다.</p><div class="row" style="gap:6px"><button class="btn" id="tesave">내 작품에 저장</button><button class="btn pri" id="tecode">제출 코드 만들기</button><button class="btn" id="tenew">새 타워</button></div><div id="tecodeout"></div>'+te[j:]
 i=te.index("'<h2>테스터 제출 코드 불러오기</h2>"); j=te.index("'<h2>밸런스 계산 방식</h2>")
 te=te[:i]+te[j:]
-R('link("words","일반 단어 공식")','"일반 단어 공식"')
+R('link("words","기본 스탯 공식")','"기본 스탯 공식"')
 i=te.index('  $("tesave").onclick = async function(){'); j=te.index('  if ($("teimpb"))')
 te=te[:i]+'''  $("tesave").onclick = function(){ read(); if (TE.word.length < 3){ toast("단어를 영문 3글자 이상 적어 주세요."); $("teword").focus(); return; }
     toast(saveWork({type:"tower", key:TE.word, name:TE.word, data:towerData(), updatedAt:Date.now()}) ? "내 작품에 저장했습니다. 이 브라우저에만 남습니다." : "이 브라우저에서는 저장할 수 없습니다. 제출 코드를 바로 보내 주세요."); };
