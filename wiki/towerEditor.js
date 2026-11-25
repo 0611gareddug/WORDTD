@@ -27,6 +27,7 @@ function teVec(t){
 }
 function teBase(word){ var P = pts(word), L = word.length, V = (word.match(/[AEIOU]/g) || []).length / Math.max(1, L);
   return {atk: P * 3 * (1 + 0.15 * (L - 3)), interval: +(1.3 - 0.6 * V).toFixed(2), range: +Math.min(4, 2 + 0.25 * (L - 3)).toFixed(2)}; }
+var TE_MODE_D = {single:"적 1마리를 쏜다. 가장 기본적인 형태.",pierce:"일직선으로 날아가 최대 3마리를 꿰뚫는다. 줄 선 적에게 강하다.",aoe:"맞은 지점 반경 안의 적 모두에게 피해. 무리에 강하다.",rapid:"공격 간격이 절반, 대신 한 발 피해 45%. 적중 효과가 자주 터진다.",beam:"끊기지 않는 광선. 같은 적을 오래 맞출수록 유리하다.",trap:"길 위에 함정을 깔아 밟으면 터진다. 길 가까이 지어야 한다.",aura:"직접 공격하지 않는다. 주변 강화, 골드, 회복 같은 지원 효과만 쓴다."};
 function teBaseAtk(t){ return teBase(t.word && t.word.length >= 3 ? t.word : "TOWER").atk; }
 function teSetMult(t, m){ t.mult = +m.toFixed(2); t.dmg = +(teBaseAtk(t) * t.mult).toFixed(1); }
 function teCost(t){ return Math.round((10 + pts(t.word) * 4) * t.mult); }
@@ -73,26 +74,26 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   var fx = TE_FX.map(function(f){ return '<label class="fx"><span>' + f[1] + ' <small>' + f[6] + '</small></span><span class="fxi"><input type="number" id="fx-' + f[0] + '" min="' + f[3] + '" max="' + f[4] + '" step="' + f[5] + '" inputmode="decimal"><em>' + f[2] + '</em></span></label>'; }).join("");
   return '<p>새 특수 단어 타워의 컨셉과 픽셀 디자인을 만드는 도구다. 저장한 타워는 Claude가 읽어 게임과 도감에 넣는다. 저장한 뒤 채팅에서 "타워 저장했어"라고 알려 주면 된다.</p>' +
   '<div class="te">' +
-  '<section class="te-col"><h3 class="te-h">픽셀 디자인 <small>16 × 16</small></h3>' +
+  '<section class="te-col"><h3 class="te-h">픽셀 디자인 <small>16 × 16</small></h3><p class="te-desc">타워의 생김새를 한 칸씩 칠한다. 게임에서는 작게 보이므로 굵은 실루엣과 속성 색 한두 가지가 눈에 잘 띈다. 아래쪽 두세 줄은 받침대로 남겨 두면 단어 띠와 잘 어울린다.</p>' +
   '<canvas id="tec" width="320" height="320" aria-label="타워 픽셀 편집 격자"></canvas>' +
   '<div class="row te-tools" id="tetools"><button class="btn on" data-t="pen">펜</button><button class="btn" data-t="erase">지우개</button><button class="btn" data-t="fill">채우기</button><button class="btn" data-t="pick">스포이드</button><button class="btn" id="temir" aria-pressed="false">좌우 대칭</button></div>' +
-  '<div class="swatches" id="tesw"></div>' +
+  '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 격자에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p>' +
   '<div class="row" style="gap:6px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">직접 고르기<input type="color" id="tecol" value="#f08a24" style="width:48px;min-height:36px;padding:2px"></label><button class="btn" id="teundo">되돌리기</button><button class="btn" id="teclear">비우기</button></div>' +
-  '<h3 class="te-h">인게임 미리보기</h3><div class="te-prev"><div class="board" style="aspect-ratio:3/2;max-width:200px"><canvas id="teprevbg"></canvas><div class="bt" style="left:33.33%;top:0;width:33.33%;height:50%"><img id="teprev" alt="미리보기"><span class="plate" id="teplate">WORD</span></div></div><div class="tcell" id="tebig"></div></div>' +
-  '<h3 class="te-h">디자인 자동 추천</h3><p class="count" style="margin:0 0 6px">단어와 속성으로 만든 후보. 누르면 편집 격자로 불러온다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
+  '<h3 class="te-h">인게임 미리보기</h3><p class="te-desc">왼쪽은 실제 게임 칸 크기, 오른쪽은 크게 본 모습이다. 칸 크기에서도 무슨 타워인지 알아볼 수 있는지 확인하자. 단어 띠의 아래 테두리 색은 속성 색이다.</p><div class="te-prev"><div class="board" style="aspect-ratio:3/2;max-width:200px"><canvas id="teprevbg"></canvas><div class="bt" style="left:33.33%;top:0;width:33.33%;height:50%"><img id="teprev" alt="미리보기"><span class="plate" id="teplate">WORD</span></div></div><div class="tcell" id="tebig"></div></div>' +
+  '<h3 class="te-h">디자인 자동 추천</h3><p class="te-desc">단어와 속성을 바탕으로 기본 타워 양식(불은 화로, 얼음은 수정 첨탑 등)에서 후보 8개를 만든다. 누르면 편집 격자로 불러오고, 거기서 마음대로 고치면 된다. ‘다른 후보 보기’로 계속 새 후보를 볼 수 있다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
   '</section>' +
-  '<section class="te-col"><h3 class="te-h">컨셉</h3>' +
-  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 150px">단어 (영문 3~12자)<input id="teword" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><label class="field" style="flex:1 1 120px">속성<select id="teel">' + els + '</select></label></div>' +
-  '<label class="field">컨셉 설명<textarea id="teconcept" rows="2" maxlength="300" placeholder="예: 별의 핵이 폭발하듯 일직선을 꿰뚫는 광선"></textarea></label>' +
-  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 140px">공격 방식<select id="temode">' + modes + '</select></label><label class="field" style="flex:1 1 90px">범위 반경 (칸)<input type="number" id="teradius" min="0" max="3" step="0.1" inputmode="decimal"></label></div>' +
-  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 110px">공격력 (1회 피해)<input type="number" id="tedmg" min="1" max="2000" step="0.5" inputmode="decimal"></label><label class="field" style="flex:1 1 110px">피해 종류<select id="tedtype"><option value="physical">물리 (방어력 영향)</option><option value="magic">마법 (마법 저항 영향)</option><option value="true">고정 (저항 무시)</option></select></label></div><div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">배율 (= 비용 배율)<input type="number" id="temult" min="0.1" max="5" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">공격 간격 (초)<input type="number" id="teint" min="0.1" max="4" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">사거리 (칸)<input type="number" id="terange" min="1" max="7" step="0.25" inputmode="decimal"></label></div>' +
+  '<section class="te-col"><h3 class="te-h">컨셉</h3><p class="te-desc">타워의 정체성. 단어 뜻과 능력이 바로 이어질수록 좋다. 예: ANCHOR(닻)는 적을 붙잡아 멈추게 한다.</p>' +
+  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 150px">단어 (영문 3~12자)<input id="teword" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"><small class="hint">실존하는 영단어. 글자 점수가 공격력과 비용의 기준이 된다</small></label><label class="field" style="flex:1 1 120px">속성<select id="teel">' + els + '</select><small class="hint"><span id="teelhint"></span></small></label></div>' +
+  '<label class="field">컨셉 설명<textarea id="teconcept" rows="2" maxlength="300" placeholder="예: 별의 핵이 폭발하듯 일직선을 꿰뚫는 광선"></textarea><small class="hint">한두 문장으로 어떤 타워인지 적는다. 겹침 분석에도 쓰인다</small></label>' +
+  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 140px">공격 방식<select id="temode">' + modes + '</select><small class="hint"><span id="temodehint"></span></small></label><label class="field" style="flex:1 1 90px">범위 반경 (칸)<input type="number" id="teradius" min="0" max="3" step="0.1" inputmode="decimal"><small class="hint">범위 공격일 때만 쓴다. 맞은 지점에서 이 거리 안의 적이 모두 맞는다</small></label></div>' +
+  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 110px">공격력 (1회 피해)<input type="number" id="tedmg" min="1" max="2000" step="0.5" inputmode="decimal"><small class="hint">한 번 맞힐 때 주는 피해. 올리면 비용도 같이 오른다</small></label><label class="field" style="flex:1 1 110px">피해 종류<select id="tedtype"><option value="physical">물리 (방어력 영향)</option><option value="magic">마법 (마법 저항 영향)</option><option value="true">고정 (저항 무시)</option></select><small class="hint">셸처럼 단단한 적은 물리에, 고스트는 마법에 강하다</small></label></div><div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">배율 (= 비용 배율)<input type="number" id="temult" min="0.1" max="5" step="0.05" inputmode="decimal"><small class="hint">단어 공식 공격력 대비 비율. 이 값이 비용에 곱해진다</small></label><label class="field" style="flex:1 1 90px">공격 간격 (초)<input type="number" id="teint" min="0.1" max="4" step="0.05" inputmode="decimal"><small class="hint">공격과 공격 사이 시간. 작을수록 빠르다</small></label><label class="field" style="flex:1 1 90px">사거리 (칸)<input type="number" id="terange" min="1" max="7" step="0.25" inputmode="decimal"><small class="hint">타워 중심에서 공격이 닿는 거리 (1칸 = 격자 한 칸)</small></label></div>' +
   '<p class="count" id="tebase" style="margin:0"></p>' +
-  '<details class="fold" open><summary>효과</summary><div class="fxs">' + fx + '</div></details>' +
-  '<label class="field">★Lv5 강화<input id="telv5" maxlength="120" placeholder="예: 광선 2줄"></label>' +
-  '<div class="row" style="gap:6px"><button class="btn" id="tepreset">속성 기본 컨셉 추천</button></div>' +
-  '<h3 class="te-h">밸런스</h3><div class="bal" id="tebal"></div><div class="row" style="gap:6px"><button class="btn pri" id="teauto">밸런스 자동 조정</button></div><div id="tebaldiff"></div>' +
-  '<h3 class="te-h">겹침 분석</h3><div class="row" style="gap:6px"><button class="btn" id="teov">기존 타워와 비교</button></div><div id="teovout"><p class="count">단어, 디자인, 능력이 기존 ' + WORDS.length + '개 타워와 얼마나 겹치는지 검사한다.</p></div>' +
-  '<h3 class="te-h">저장</h3><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>' +
+  '<details class="fold" open><summary>효과</summary><p class="te-desc" style="padding-top:8px">공격에 붙는 추가 능력. 비워 두면 없음. 숫자가 클수록 전투력이 오르니 밸런스 칸을 보며 조절하자. 여러 개를 섞으면 원소 반응과 어울리는 개성 있는 타워가 된다.</p><div class="fxs">' + fx + '</div></details>' +
+  '<label class="field">★Lv5 강화<input id="telv5" maxlength="120" placeholder="예: 광선 2줄"><small class="hint">같은 단어를 합성해 5레벨이 되면 얻는 추가 효과</small></label>' +
+  '<div class="row" style="gap:6px"><button class="btn" id="tepreset">속성 기본 컨셉 추천</button></div><p class="te-desc">고른 속성의 대표적인 공격 방식과 효과를 채우고 밸런스까지 맞춘다. 희귀 글자(K, J, X, Q, Z)가 들어가면 치명타를, 7글자 이상이면 사거리를 더 준다.</p>' +
+  '<h3 class="te-h">밸런스</h3><p class="te-desc">전투력(초당 피해 × 공격 방식 × 사거리 × 효과 + 지원 효과)을 건설 비용과 비교한다. 0.85~1.15가 <b>적정</b>, 낮으면 <b>약함</b>, 높으면 <b>강함</b>. 자동 조정은 공격 간격 → 효과 수치 → 배율 순서로 고치고 무엇이 바뀌었는지 표로 보여 준다.</p><div class="bal" id="tebal"></div><div class="row" style="gap:6px"><button class="btn pri" id="teauto">밸런스 자동 조정</button></div><div id="tebaldiff"></div>' +
+  '<h3 class="te-h">겹침 분석</h3><p class="te-desc">기존 타워와 세 가지를 비교한다. <b>단어</b>: 이미 있는 단어나 파생어(FIRE → FIRED)인지. <b>디자인</b>: 픽셀 모양과 색이 비슷한 타워. <b>능력</b>: 효과와 속성이 비슷한 타워. 60~70% 이상이면 차별점을 하나 더 넣는 걸 권한다.</p><div class="row" style="gap:6px"><button class="btn" id="teov">기존 타워와 비교</button></div><div id="teovout"><p class="count">단어, 디자인, 능력이 기존 ' + WORDS.length + '개 타워와 얼마나 겹치는지 검사한다.</p></div>' +
+  '<h3 class="te-h">저장</h3><p class="te-desc">저장하면 위키 저장소에 들어가 Claude가 읽을 수 있다. 같은 단어로 다시 저장하면 덮어쓴다.</p><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>' +
   '</section></div>' +
   '<h2>테스터 제출 코드 불러오기</h2><p>크리에이터 페이지에서 받은 WTDT1. 코드를 붙여 넣으면 편집기로 불러온다. 확인한 뒤 타워 저장을 누르면 저장소에 들어간다.</p><div class="row"><input class="inp" id="teimp" placeholder="WTDT1.…" style="flex:1 1 260px" aria-label="타워 제출 코드"><button class="btn" id="teimpb">불러오기</button></div>' +
   '<h2>저장된 타워</h2><div class="saved" id="tesaved"><p class="count">저장된 타워를 불러오는 중입니다.</p></div>' +
@@ -147,14 +148,15 @@ function teInit(){
     $("teword").value = TE.word; $("teel").value = TE.kind; $("teconcept").value = TE.concept; $("temode").value = TE.mode; $("teradius").value = TE.radius;
     $("temult").value = TE.mult; $("tedmg").value = TE.dmg; $("tedtype").value = TE.dtype || "physical"; $("teint").value = TE.interval; $("terange").value = TE.range; $("telv5").value = TE.lv5;
     TE_FX.forEach(function(f){ $("fx-" + f[0]).value = TE.fx[f[0]] || ""; });
-    $("teradius").disabled = TE.mode !== "aoe";
+    $("teradius").disabled = TE.mode !== "aoe"; hints();
   }
+  function hints(){ $("temodehint").textContent = TE_MODE_D[TE.mode] || ""; $("teelhint").textContent = "기본 효과: " + EL[TE.kind].e; }
   function read(){
     TE.word = $("teword").value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); $("teword").value = TE.word;
     TE.kind = $("teel").value; TE.concept = $("teconcept").value; TE.mode = $("temode").value; TE.radius = +$("teradius").value || 0;
     TE.dtype = $("tedtype").value; TE.dmg = Math.min(2000, Math.max(1, +$("tedmg").value || 1)); TE.mult = +(TE.dmg / teBaseAtk(TE)).toFixed(2); if (document.activeElement !== $("temult")) $("temult").value = TE.mult; TE.interval = Math.min(4, Math.max(0.1, +$("teint").value || 1)); TE.range = Math.min(7, Math.max(1, +$("terange").value || 2)); TE.lv5 = $("telv5").value;
     TE.fx = {}; TE_FX.forEach(function(f){ var v = +$("fx-" + f[0]).value; if (v > 0) TE.fx[f[0]] = Math.min(f[4], v); });
-    $("teradius").disabled = TE.mode !== "aoe";
+    $("teradius").disabled = TE.mode !== "aoe"; hints();
   }
   function bal(){
     var p = tePower(TE), c = teCost(TE), r = p.total / Math.max(1, c), b = teBase(TE.word.length >= 3 ? TE.word : "TOWER");

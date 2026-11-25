@@ -7,8 +7,8 @@ def R(a,b):
     assert te.count(a)==1,(te.count(a),a[:70]); te=te.replace(a,b)
 R('<p>새 특수 단어 타워의 컨셉과 픽셀 디자인을 만드는 도구다. 저장한 타워는 Claude가 읽어 게임과 도감에 넣는다. 저장한 뒤 채팅에서 "타워 저장했어"라고 알려 주면 된다.</p>',
   '<p>단어를 정하고, 픽셀로 디자인하고, 능력과 수치를 정한다. 막히면 <b>디자인 자동 추천</b>과 <b>속성 기본 컨셉 추천</b>을 눌러 보자. 다 만들면 밸런스를 <b>적정</b>으로 맞추고 <b>겹침 분석</b>을 돌린 뒤 제출 코드를 보내 주면 된다.</p>')
-R('\'<h3 class="te-h">저장</h3><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>\'',
-  '\'<h3 class="te-h">제출</h3><div class="row" style="gap:6px"><button class="btn" id="tesave">내 작품에 저장</button><button class="btn pri" id="tecode">제출 코드 만들기</button><button class="btn" id="tenew">새 타워</button></div><div id="tecodeout"></div><p class="count" id="tedb" style="margin:0"></p>\'')
+i=te.index('<h3 class="te-h">저장</h3>'); j=te.index('<p class="count" id="tedb" style="margin:0"></p>')
+te=te[:i]+'<h3 class="te-h">제출</h3><p class="te-desc"><b>내 작품에 저장</b>은 이 브라우저에만 임시로 남긴다. <b>제출 코드 만들기</b>를 누르면 개발자에게 보낼 코드가 나온다. 밸런스가 적정이어야 코드가 만들어진다.</p><div class="row" style="gap:6px"><button class="btn" id="tesave">내 작품에 저장</button><button class="btn pri" id="tecode">제출 코드 만들기</button><button class="btn" id="tenew">새 타워</button></div><div id="tecodeout"></div>'+te[j:]
 i=te.index("'<h2>테스터 제출 코드 불러오기</h2>"); j=te.index("'<h2>밸런스 계산 방식</h2>")
 te=te[:i]+te[j:]
 R('link("words","일반 단어 공식")','"일반 단어 공식"')
