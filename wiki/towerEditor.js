@@ -10,7 +10,7 @@ var TE_PRESET = {
   fire:{mode:"single",fx:{burn:20}}, ice:{mode:"single",fx:{slow:30}}, storm:{mode:"single",fx:{chain:2}}, poison:{mode:"single",fx:{poison:3}},
   earth:{mode:"aoe",radius:0.8,fx:{stun:15}}, water:{mode:"single",fx:{knock:0.3,slow:10}}, wind:{mode:"rapid",fx:{crit:10}}, light:{mode:"pierce",fx:{crit:10}},
   dark:{mode:"single",fx:{execute:10}}, steel:{mode:"single",fx:{pierceArmor:50}}, arcane:{mode:"aoe",radius:0.6,fx:{stun:10}}, nature:{mode:"single",fx:{stun:10,poison:1}},
-  support:{mode:"aura",fx:{buff:15}}
+  support:{mode:"aura",fx:{buff:15}}, beast:{mode:"rapid",fx:{burn:10,crit:10}}, food:{mode:"single",fx:{slow:25,heal:0}}, gear:{mode:"single",fx:{pierceArmor:30,crit:5}}
 };
 var KW = {burn:["화상","불씨","화염","용암","산불","불"],slow:["둔화","감속"],freeze:["빙결","얼","정지"],stun:["기절","수면","정지"],chain:["연쇄","튐"],poison:["독"],
   knock:["넉백","후퇴","되돌","날림","밀"],execute:["즉사"],pierce:["관통","광선","레이저"],aoe:["범위","폭발","장판","광역","전체"],buff:["주변","오라","+"],gold:["골드","이자"],

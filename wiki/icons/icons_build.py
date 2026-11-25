@@ -1,6 +1,6 @@
 import json
 icons={}
-for f in ['icons1.txt','icons2.txt','icons3.txt']:
+for f in ['icons1.txt','icons2.txt','icons3.txt','icons4.txt']:
     cur=None
     for line in open(f,encoding='utf-8').read().split('\n'):
         if line.startswith('@'):
