@@ -75,7 +75,7 @@ PAGES.guide = {html:function(){
   var hero = ["DRAGON","BLIZZARD","STORM","FOREST","REAPER","NOVA"].map(function(n){ var w = WORDS.filter(function(x){ return x.w === n; })[0]; return tCell(w, 4); }).join("");
   return '<div class="home-hero"><div class="ht"><h2 class="hh">WORD TD 크리에이터</h2><p>영단어가 곧 타워가 되는 타워 디펜스 <b>WORD TD</b>의 테스터용 제작 도구입니다. 직접 만든 타워와 맵을 보내 주시면 검토해서 게임에 넣습니다.</p></div><div class="towers">' + hero + '</div></div>' +
   '<h2>게임 소개</h2><ul><li>플레이어가 영단어를 입력하면 그 단어가 타워가 됩니다. FIRE는 불 타워, ICE는 얼음 타워.</li><li>게임 단어 목록(지금 ' + WORDS.length + '개)에 있는 단어를 지을 수 있고, 단어마다 고유 능력과 아이콘이 있습니다. 목록에 없는 단어는 "게임에 없는 단어입니다!"가 뜹니다.</li><li><b>여러분이 제출한 단어가 목록을 늘립니다.</b> 목록을 500~1000개로 키우는 중이라, 아직 없는 단어를 제안해 주시면 큰 도움이 됩니다.</li><li>글자마다 점수가 있어서 Q, Z처럼 희귀한 글자가 든 긴 단어일수록 강하지만 비쌉니다.</li></ul>' +
-  '<h2>이렇게 참여해 주세요</h2><ol><li>위쪽 <b>닉네임</b> 칸에 이름을 적어 주세요. 제출 코드에 함께 담겨 크레딧에 쓰입니다.</li><li><a href="#tower">타워 만들기</a> 또는 <a href="#map">맵 만들기</a>에서 작품을 만듭니다.</li><li>타워는 밸런스가 <b>적정</b>이 되도록 맞추고, <b>겹침 분석</b>으로 기존 타워와 너무 비슷하지 않은지 확인합니다.</li><li><b>제출 코드 만들기</b>를 누르고, 나온 코드를 복사해 개발자에게 보내 주세요.</li></ol>' +
+  '<h2>이렇게 참여해 주세요</h2><ol><li>위쪽 <b>닉네임</b> 칸에 이름을 적어 주세요. 제출 코드에 함께 담겨 크레딧에 쓰입니다.</li><li><a href="#list">단어 목록</a>에서 이미 있는 단어를 확인하고, <a href="#tower">타워 만들기</a> 또는 <a href="#map">맵 만들기</a>에서 작품을 만듭니다.</li><li>타워는 밸런스가 <b>적정</b>이 되도록 맞추고, <b>겹침 분석</b>으로 기존 타워와 너무 비슷하지 않은지 확인합니다.</li><li><b>제출 코드 만들기</b>를 누르고, 나온 코드를 복사해 개발자에게 보내 주세요.</li></ol>' +
   '<div class="note hl">작품은 이 브라우저에만 임시로 남습니다. 다른 기기에서는 보이지 않고, 브라우저 데이터를 지우면 사라질 수 있으니 완성하면 바로 제출 코드를 보내 주세요.</div>' +
   '<h2>좋은 타워의 조건</h2><ul><li><b>실존하는 영단어</b> (3~12글자, 고유명사 제외).</li><li>단어 뜻과 능력이 바로 연결될 것. 예: ANCHOR는 적을 붙잡아 멈추게 한다.</li><li>기존 타워에 없는 효과 조합이나 쓰임새가 하나는 있을 것.</li><li>디자인은 게임 안에서 작게 보이므로 실루엣이 또렷할 것.</li></ul>' +
   '<h2>좋은 맵의 조건</h2><ul><li>길을 보고 "어디에 지을까" 고민하게 만드는 갈림길, 굽이, 합류 지점.</li><li>입구가 여러 개라면 각 길의 길이를 다르게 해서 도착 시간이 엇갈리게.</li><li>마법진은 반전이나 지름길처럼 분명한 의도가 있을 때만.</li></ul>' +
@@ -117,8 +117,30 @@ PAGES.works = {html:function(){
   };
 }};
 
+
+/* ---------- 단어 목록 (크리에이터) ---------- */
+var listState = {f:"all", q:""};
+PAGES.list = {html:function(){
+  var btns = '<button data-f="all">전체</button>' + EL_ORDER.map(function(k){ return '<button data-f="' + k + '"><i style="background:' + EL[k].m + '"></i>' + EL[k].n + '</button>'; }).join("") + '<button data-f="legend">전설</button>';
+  return '<h1 class="ph">게임 단어 목록</h1><p>지금 게임에서 지을 수 있는 단어 ' + WORDS.length + '개입니다. 여기에 없는 단어를 타워로 만들어 제출하면 목록이 늘어납니다. 같은 단어나 비슷한 능력이 있는지 먼저 찾아보세요.</p>' +
+  '<div class="row"><input class="inp" id="lq" type="search" placeholder="단어나 능력 검색" style="flex:1 1 220px" aria-label="단어 검색"><span class="count" id="lc"></span></div><div class="filters" id="lf">' + btns + '</div><div class="grid-cards" id="lg"></div>';
+}, after:function(){
+  var g = document.getElementById("lg"), q = document.getElementById("lq"), f = document.getElementById("lf"), c = document.getElementById("lc");
+  q.value = listState.q;
+  function cardOf(w){ var m = w.m == null ? "—" : w.m.toFixed(1); return '<div class="card"><div class="cimg">' + tCell(w, 4) + '</div><div class="ct"><span class="word">' + w.w + '</span>' + chip(w.k) + (w.L ? '<span class="chip">전설</span>' : '') + (w.n ? '<span class="chip">NEW</span>' : '') + '</div><div class="stat"><span>배율 ' + m + '</span><span>비용 ' + cost(w) + 'G</span></div><p>' + esc(w.a) + '</p>' + (w.v ? '<p class="v">★Lv5 ' + esc(w.v) + '</p>' : '') + '</div>'; }
+  function render(){
+    var t = listState.q.trim().toLowerCase();
+    var list = WORDS.filter(function(w){ if (listState.f === "legend" && !w.L) return false; if (listState.f !== "all" && listState.f !== "legend" && (w.k !== listState.f || w.L)) return false; return !t || (w.w + " " + w.a + " " + w.v + " " + EL[w.k].n).toLowerCase().indexOf(t) >= 0; });
+    g.innerHTML = list.length ? list.map(cardOf).join("") : '<p>조건에 맞는 단어가 없습니다. 이 단어로 새 타워를 만들어 제출해 보세요!</p>';
+    c.textContent = list.length + " / " + WORDS.length + "개";
+    [].forEach.call(f.querySelectorAll("button"), function(b){ b.classList.toggle("on", b.getAttribute("data-f") === listState.f); });
+  }
+  q.addEventListener("input", function(){ listState.q = q.value; render(); });
+  f.addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; listState.f = b.getAttribute("data-f"); render(); });
+  render();
+}};
 /* ---------- 라우터 ---------- */
-var VIEWS = {guide:"안내", tower:"타워 만들기", map:"맵 만들기", works:"내 작품"};
+var VIEWS = {guide:"안내", list:"단어 목록", tower:"타워 만들기", map:"맵 만들기", works:"내 작품"};
 PAGES.tower = PAGES.toweredit;
 function render(id){
   if (id === "toweredit") id = "tower"; if (!VIEWS[id]) id = "guide";
