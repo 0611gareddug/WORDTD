@@ -80,7 +80,7 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 격자에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p>' +
   '<div class="row" style="gap:6px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">직접 고르기<input type="color" id="tecol" value="#f08a24" style="width:48px;min-height:36px;padding:2px"></label><button class="btn" id="teundo">되돌리기</button><button class="btn" id="teclear">비우기</button></div>' +
   '<h3 class="te-h">인게임 미리보기</h3><p class="te-desc">왼쪽은 실제 게임 칸 크기, 오른쪽은 크게 본 모습이다. 칸 크기에서도 무슨 타워인지 알아볼 수 있는지 확인하자. 단어 띠의 아래 테두리 색은 속성 색이다.</p><div class="te-prev"><div class="board" style="aspect-ratio:3/2;max-width:200px"><canvas id="teprevbg"></canvas><div class="bt" style="left:33.33%;top:0;width:33.33%;height:50%"><img id="teprev" alt="미리보기"><span class="plate" id="teplate">WORD</span></div></div><div class="tcell" id="tebig"></div></div>' +
-  '<h3 class="te-h">디자인 자동 추천</h3><p class="te-desc">단어와 속성을 바탕으로 기본 타워 양식(불은 화로, 얼음은 수정 첨탑 등)에서 후보 8개를 만든다. 누르면 편집 격자로 불러오고, 거기서 마음대로 고치면 된다. ‘다른 후보 보기’로 계속 새 후보를 볼 수 있다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
+  '<h3 class="te-h">디자인 자동 추천</h3><p class="te-desc">고른 속성의 기존 단어 아이콘 8개를 후보로 보여 준다 (단어가 이미 목록에 있으면 그 아이콘이 첫 번째). 마음에 드는 것을 눌러 불러온 뒤, 새 단어 뜻에 맞게 고쳐 그리면 된다. 아래 네 줄은 공통 받침대이니 그대로 두고 위쪽 아이콘만 고치면 된다. ‘다른 후보 보기’로 계속 넘겨 볼 수 있다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
   '</section>' +
   '<section class="te-col"><h3 class="te-h">컨셉</h3><p class="te-desc">타워의 정체성. 단어 뜻과 능력이 바로 이어질수록 좋다. 예: ANCHOR(닻)는 적을 붙잡아 멈추게 한다.</p>' +
   '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 150px">단어 (영문 3~12자)<input id="teword" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"><small class="hint">실존하는 영단어. 글자 점수가 공격력과 비용의 기준이 된다</small></label><label class="field" style="flex:1 1 120px">속성<select id="teel">' + els + '</select><small class="hint"><span id="teelhint"></span></small></label></div>' +
@@ -101,7 +101,7 @@ PAGES.toweredit = {cats:["제작"], html:function(){
 }, after:function(){ teInit(); }};
 
 var TE = null, teDb = null, teDocs = null, teTried = false, teRecSalt = 0;
-function teDefault(){ return {word:"QUASAR", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, dmg:+(teBase("QUASAR").atk * 1.2).toFixed(1), dtype:"magic", interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:TG.make("QUASAR","light",false,0).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false}; }
+function teDefault(){ return {word:"QUASAR", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, dmg:+(teBase("QUASAR").atk * 1.2).toFixed(1), dtype:"magic", interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:(TG.icon("NOVA","light",false) || TG.make("QUASAR","light",false,0)).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false}; }
 function teInit(){
   if (!TE) TE = teDefault();
   var cv = document.getElementById("tec"), ctx = cv.getContext("2d");
@@ -140,7 +140,13 @@ function teInit(){
   var clr = 0; $("teclear").onclick = function(){ var b = this; if (Date.now() - clr > 3000){ clr = Date.now(); b.textContent = "한 번 더 누르면 비움"; setTimeout(function(){ b.textContent = "비우기"; }, 3000); return; } snap(); TE.px = TE.px.map(function(){ return null; }); b.textContent = "비우기"; clr = 0; preview(); };
   function recs(){
     var w = TE.word.length >= 3 ? TE.word : "TOWER", box = $("terecs"); box.innerHTML = "";
-    for (var s = 0; s < 8; s++){ var g = TG.make(w, TE.kind, false, teRecSalt * 8 + s); var b = document.createElement("button"); b.className = "rec"; b.setAttribute("aria-label", "추천 디자인 " + (s + 1)); b.appendChild(pxCanvas(g, 3)); (function(g){ b.onclick = function(){ snap(); TE.px = g.slice(); preview(); toast("추천 디자인을 불러왔습니다. 마음대로 고쳐 보세요."); }; })(g); box.appendChild(b); }
+    var cands = [], own = TG.icon(w, TE.kind, false);
+    if (own) cands.push({w: w, g: own});
+    var pool = WORDS.filter(function(x){ return x.k === TE.kind && !x.L && x.w !== w; });
+    var h = 0; for (var i = 0; i < w.length; i++) h = (h * 31 + w.charCodeAt(i)) >>> 0;
+    var start = (h + teRecSalt * 8) % Math.max(1, pool.length);
+    for (var j = 0; cands.length < 8 && j < pool.length; j++){ var p = pool[(start + j * 7) % pool.length]; if (!cands.some(function(c){ return c.w === p.w; })) cands.push({w: p.w, g: TG.icon(p.w, TE.kind, false)}); }
+    cands.forEach(function(c, s){ if (!c.g) return; var b = document.createElement("button"); b.className = "rec"; b.title = c.w + " 아이콘에서 시작"; b.setAttribute("aria-label", c.w + " 아이콘을 바탕으로 시작"); b.appendChild(pxCanvas(c.g, 3)); var sm = document.createElement("small"); sm.textContent = c.w; b.appendChild(sm); b.onclick = function(){ snap(); TE.px = c.g.slice(); preview(); toast(c.w + " 아이콘을 불러왔습니다. 단어에 맞게 고쳐 보세요."); }; box.appendChild(b); });
   }
   $("temore").onclick = function(){ teRecSalt++; recs(); };
   /* 컨셉 폼 */

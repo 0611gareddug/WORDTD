@@ -14,7 +14,7 @@ function codeBox(el, code, what){
   var ta = el.querySelector("textarea"), bt = el.querySelector("button"); ta.value = code; bt.onclick = function(){ copyText(code, ta); };
 }
 
-function towerData(){ return {v:1, author:nick(), word:TE.word, kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, dmg:TE.dmg, dtype:TE.dtype, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3)}; }
+function towerData(){ return {v:1, dv:2, author:nick(), word:TE.word, kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, dmg:TE.dmg, dtype:TE.dtype, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3)}; }
 
 /* ---------- 맵 에디터 (크리에이터) ---------- */
 var MP = null;

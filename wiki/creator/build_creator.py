@@ -25,7 +25,7 @@ te=te[:i]+'''  $("tesave").onclick = function(){ read(); if (TE.word.length < 3)
 '''+te[j:]
 i=te.index('function teRenderSaved(){'); j=te.index('function b64e(o)')
 te=te[:i]+'function teConnect(){ var s = document.getElementById("tedb"); if (s) s.textContent = "작업은 이 브라우저에만 임시로 남습니다. 완성하면 제출 코드를 보내 주세요."; }\n'+te[j:]
-R('  if (!TE) TE = teDefault();','  if (!TE){ var dr = lsGet("wtd-draft-tower", null); TE = dr && dr.word ? towerFromData(dr) : teDefault(); }')
+R('  if (!TE) TE = teDefault();','  if (!TE){ var dr = lsGet("wtd-draft-tower", null); TE = dr && dr.word && dr.dv === 2 ? towerFromData(dr) : teDefault(); }')
 app=open('creator_app.js',encoding='utf-8').read()
 extra=open('creator_extra.css',encoding='utf-8').read()
 head=open('creator_head.html',encoding='utf-8').read()
