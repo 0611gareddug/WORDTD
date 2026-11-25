@@ -658,7 +658,7 @@ PAGES.home = {cats:["대문"], html:function(){
   '<h2>인게임 표시</h2><p>게임 안에서 타워는 칸 위쪽에 그려지고, 바로 아래에 철자가 적힌 단어 띠가 붙는다. 띠 아래 테두리 색이 속성 색이다.</p>' + boardDemo() + '<h2>둘러보기</h2><div class="grid-cards">' +
   [["overview","게임 개요","핵심 루프와 한눈에 보는 규칙"],["words","단어 입력과 비용","자유 입력, 글자 점수, 건설 비용"],["towers","타워 도감","특수 단어 " + WORDS.length + "개 전체 목록"],["enemies","적 도감","일반 적 10종의 능력과 대처법"],["bosses","보스 도감","챕터 보스 5종의 패턴"],["chapters","챕터","5개 챕터, 50개 스테이지와 맵"],["editor","맵 에디터","직접 맵을 그리고 저장하기"],["toweredit","타워 에디터","컨셉·디자인·밸런스·겹침 분석"],["difficulty","난이도","쉬움부터 지옥까지 수치 비교"]].map(function(c){ return '<a class="card" href="#' + c[0] + '"><b>' + c[1] + '</b><p class="v">' + c[2] + '</p></a>'; }).join("") + '</div>' +
   '<h2>오늘의 단어</h2><div class="grid-cards">' + wordCard(wd) + '</div>' +
-  '<h2>최근 변경</h2><ul><li><b>v1.5</b> 타워 에디터: 픽셀 디자인, 디자인 자동 추천, 밸런스 자동 조정, 겹침 분석</li><li><b>v1.4</b> 타워 270종 모두 서로 다른 생김새, 인게임 단어 띠 표시</li><li><b>v1.3</b> 직접 그린 맵 THE END?를 무한 모드 특별 맵으로 추가</li><li><b>v1.2</b> 위키 개설, 맵 에디터 추가, 챕터별 맵 15종 공개</li><li><b>v1.1</b> 손패 시스템 삭제. 아무 영단어나 자유롭게 입력하고 골드로 짓는 방식으로 변경</li><li><b>v1.0</b> 기획 초안, 특수 단어 270개</li></ul>' +
+  '<h2>최근 변경</h2><ul><li><b>v1.5.1</b> 타워 에디터에 공격력·피해 종류 입력 추가</li><li><b>v1.5</b> 타워 에디터: 픽셀 디자인, 디자인 자동 추천, 밸런스 자동 조정, 겹침 분석</li><li><b>v1.4</b> 타워 270종 모두 서로 다른 생김새, 인게임 단어 띠 표시</li><li><b>v1.3</b> 직접 그린 맵 THE END?를 무한 모드 특별 맵으로 추가</li><li><b>v1.2</b> 위키 개설, 맵 에디터 추가, 챕터별 맵 15종 공개</li><li><b>v1.1</b> 손패 시스템 삭제. 아무 영단어나 자유롭게 입력하고 골드로 짓는 방식으로 변경</li><li><b>v1.0</b> 기획 초안, 특수 단어 270개</li></ul>' +
   '<div class="note">디자인 시안(게임 화면, 타워 시트)은 <a href="' + DESIGN_URL + '" target="_blank" rel="noopener">디자인 캔버스</a>에서 볼 수 있다.</div>';
 }};
 PAGES.overview = {cats:["시스템"], html:function(){
@@ -950,9 +950,11 @@ function teVec(t){
 }
 function teBase(word){ var P = pts(word), L = word.length, V = (word.match(/[AEIOU]/g) || []).length / Math.max(1, L);
   return {atk: P * 3 * (1 + 0.15 * (L - 3)), interval: +(1.3 - 0.6 * V).toFixed(2), range: +Math.min(4, 2 + 0.25 * (L - 3)).toFixed(2)}; }
+function teBaseAtk(t){ return teBase(t.word && t.word.length >= 3 ? t.word : "TOWER").atk; }
+function teSetMult(t, m){ t.mult = +m.toFixed(2); t.dmg = +(teBaseAtk(t) * t.mult).toFixed(1); }
 function teCost(t){ return Math.round((10 + pts(t.word) * 4) * t.mult); }
 function tePower(t){
-  var b = teBase(t.word), atk = b.atk * t.mult, f = t.fx, mode = t.mode;
+  var b = teBase(t.word), atk = t.dmg != null ? t.dmg : b.atk * t.mult, f = t.fx, mode = t.mode;
   var mf = mode === "aoe" ? 1 + 2.5 * t.radius * 0.6 : (TE_MODES.filter(function(m){ return m[0] === mode; })[0] || [0,0,1])[2];
   var interval = mode === "rapid" ? t.interval * 0.5 : t.interval;
   var dps = mode === "aura" ? 0 : atk / Math.max(0.1, interval) * (mode === "rapid" ? 0.45 : 1) * mf * Math.sqrt(t.range / 2.5);
@@ -966,7 +968,7 @@ function teBalance(t){
   function ok(x){ var r = teRatio(x); return r >= 0.92 && r <= 1.08; }
   function clone(x){ return JSON.parse(JSON.stringify(x)); }
   if (cur.mode === "aura"){
-    var best = cur; for (var m = 0.4; m <= 2.501; m += 0.05){ var c = clone(cur); c.mult = +m.toFixed(2); if (Math.abs(Math.log(teRatio(c))) < Math.abs(Math.log(teRatio(best)))) best = c; } cur = best;
+    var best = cur; for (var m = 0.4; m <= 2.501; m += 0.05){ var c = clone(cur); teSetMult(c, m); if (Math.abs(Math.log(teRatio(c))) < Math.abs(Math.log(teRatio(best)))) best = c; } cur = best;
   } else if (!ok(cur)){
     var lo = 0.2, hi = 3.5;
     for (var k = 0; k < 40; k++){ var mid = (lo + hi) / 2, c1 = clone(cur); c1.interval = mid; if (teRatio(c1) > 1) lo = mid; else hi = mid; }
@@ -979,7 +981,7 @@ function teBalance(t){
       cur = cand; }
   }
   if (!ok(cur) && cur.mode !== "aura"){
-    var bm = cur; for (var m2 = 0.4; m2 <= 2.501; m2 += 0.05){ var c3 = clone(cur); c3.mult = +m2.toFixed(2); if (Math.abs(Math.log(teRatio(c3))) < Math.abs(Math.log(teRatio(bm)))) bm = c3; } cur = bm;
+    var bm = cur; for (var m2 = 0.4; m2 <= 2.501; m2 += 0.05){ var c3 = clone(cur); teSetMult(c3, m2); if (Math.abs(Math.log(teRatio(c3))) < Math.abs(Math.log(teRatio(bm)))) bm = c3; } cur = bm;
   }
   return {before: before, after: cur};
 }
@@ -1006,7 +1008,7 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 150px">단어 (영문 3~12자)<input id="teword" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><label class="field" style="flex:1 1 120px">속성<select id="teel">' + els + '</select></label></div>' +
   '<label class="field">컨셉 설명<textarea id="teconcept" rows="2" maxlength="300" placeholder="예: 별의 핵이 폭발하듯 일직선을 꿰뚫는 광선"></textarea></label>' +
   '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 140px">공격 방식<select id="temode">' + modes + '</select></label><label class="field" style="flex:1 1 90px">범위 반경 (칸)<input type="number" id="teradius" min="0" max="3" step="0.1" inputmode="decimal"></label></div>' +
-  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">배율<input type="number" id="temult" min="0.4" max="2.5" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">공격 간격 (초)<input type="number" id="teint" min="0.1" max="4" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">사거리 (칸)<input type="number" id="terange" min="1" max="7" step="0.25" inputmode="decimal"></label></div>' +
+  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 110px">공격력 (1회 피해)<input type="number" id="tedmg" min="1" max="2000" step="0.5" inputmode="decimal"></label><label class="field" style="flex:1 1 110px">피해 종류<select id="tedtype"><option value="physical">물리 (방어력 영향)</option><option value="magic">마법 (마법 저항 영향)</option><option value="true">고정 (저항 무시)</option></select></label></div><div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">배율 (= 비용 배율)<input type="number" id="temult" min="0.1" max="5" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">공격 간격 (초)<input type="number" id="teint" min="0.1" max="4" step="0.05" inputmode="decimal"></label><label class="field" style="flex:1 1 90px">사거리 (칸)<input type="number" id="terange" min="1" max="7" step="0.25" inputmode="decimal"></label></div>' +
   '<p class="count" id="tebase" style="margin:0"></p>' +
   '<details class="fold" open><summary>효과</summary><div class="fxs">' + fx + '</div></details>' +
   '<label class="field">★Lv5 강화<input id="telv5" maxlength="120" placeholder="예: 광선 2줄"></label>' +
@@ -1016,11 +1018,11 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<h3 class="te-h">저장</h3><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>' +
   '</section></div>' +
   '<h2>저장된 타워</h2><div class="saved" id="tesaved"><p class="count">저장된 타워를 불러오는 중입니다.</p></div>' +
-  '<h2>밸런스 계산 방식</h2><ul><li>기본 공격력 = 글자 점수 합 × 3 × (1 + 0.15 × (글자 수 − 3)) × 배율. 공격 간격과 사거리 기본값은 ' + link("words","일반 단어 공식") + '을 따른다.</li><li><b>전투력</b> = 초당 피해 × 공격 방식 계수 × √(사거리 / 2.5) × (1 + 효과 가치) + 지원 가치.</li><li>효과 가치: 화상 1%당 0.03, 둔화 0.012, 기절 0.01, 연쇄 1회 0.45, 독 1중첩 0.15, 넉백 1칸 0.8, 즉사 1%당 0.03, 방어 무시 0.004, 치명타 0.01.</li><li>지원 가치: 주변 강화 1%당 3.2 × √배율, 골드 1G당 5, 생명 회복 1당 55 (KING, COIN, HEAL 기준으로 맞춤).</li><li><b>적정 기준</b>: 전투력 ÷ 건설 비용이 0.85~1.15. 기존 타워 FIRE가 약 0.96이다.</li><li>자동 조정 순서: ① 공격 간격(0.2~3.5초)으로 맞춘다 ② 그래도 벗어나면 효과 수치를 같은 비율로 줄이거나 늘린다 ③ 마지막으로 배율(= 비용)을 0.4~2.5 안에서 고친다. 지원(오라) 타워는 배율부터 맞춘다. 목표는 0.92~1.08.</li></ul>';
+  '<h2>밸런스 계산 방식</h2><ul><li><b>공격력</b>은 직접 정한다. 단어의 공식 공격력(글자 점수 합 × 3 × (1 + 0.15 × (글자 수 − 3)))과 비교한 비율이 <b>배율</b>이 되고, 배율이 곧 비용 배율이다. 공격력을 올리면 비용도 오른다. 배율 칸을 고치면 공격력이 거꾸로 맞춰진다. 공격 간격과 사거리 기본값은 ' + link("words","일반 단어 공식") + '을 따른다.</li><li><b>전투력</b> = 초당 피해 × 공격 방식 계수 × √(사거리 / 2.5) × (1 + 효과 가치) + 지원 가치.</li><li>효과 가치: 화상 1%당 0.03, 둔화 0.012, 기절 0.01, 연쇄 1회 0.45, 독 1중첩 0.15, 넉백 1칸 0.8, 즉사 1%당 0.03, 방어 무시 0.004, 치명타 0.01.</li><li>지원 가치: 주변 강화 1%당 3.2 × √배율, 골드 1G당 5, 생명 회복 1당 55 (KING, COIN, HEAL 기준으로 맞춤).</li><li><b>적정 기준</b>: 전투력 ÷ 건설 비용이 0.85~1.15. 기존 타워 FIRE가 약 0.96이다.</li><li>자동 조정 순서: ① 공격 간격(0.2~3.5초)으로 맞춘다 ② 그래도 벗어나면 효과 수치를 같은 비율로 줄이거나 늘린다 ③ 마지막으로 배율(= 비용)을 0.4~2.5 안에서 고친다. 지원(오라) 타워는 배율부터 맞춘다. 목표는 0.92~1.08.</li></ul>';
 }, after:function(){ teInit(); }};
 
 var TE = null, teDb = null, teDocs = null, teTried = false, teRecSalt = 0;
-function teDefault(){ return {word:"QUASAR", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:TG.make("QUASAR","light",false,0).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false}; }
+function teDefault(){ return {word:"QUASAR", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, dmg:+(teBase("QUASAR").atk * 1.2).toFixed(1), dtype:"magic", interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:TG.make("QUASAR","light",false,0).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false}; }
 function teInit(){
   if (!TE) TE = teDefault();
   var cv = document.getElementById("tec"), ctx = cv.getContext("2d");
@@ -1065,14 +1067,14 @@ function teInit(){
   /* 컨셉 폼 */
   function form(){
     $("teword").value = TE.word; $("teel").value = TE.kind; $("teconcept").value = TE.concept; $("temode").value = TE.mode; $("teradius").value = TE.radius;
-    $("temult").value = TE.mult; $("teint").value = TE.interval; $("terange").value = TE.range; $("telv5").value = TE.lv5;
+    $("temult").value = TE.mult; $("tedmg").value = TE.dmg; $("tedtype").value = TE.dtype || "physical"; $("teint").value = TE.interval; $("terange").value = TE.range; $("telv5").value = TE.lv5;
     TE_FX.forEach(function(f){ $("fx-" + f[0]).value = TE.fx[f[0]] || ""; });
     $("teradius").disabled = TE.mode !== "aoe";
   }
   function read(){
     TE.word = $("teword").value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); $("teword").value = TE.word;
     TE.kind = $("teel").value; TE.concept = $("teconcept").value; TE.mode = $("temode").value; TE.radius = +$("teradius").value || 0;
-    TE.mult = Math.min(2.5, Math.max(0.4, +$("temult").value || 1)); TE.interval = Math.min(4, Math.max(0.1, +$("teint").value || 1)); TE.range = Math.min(7, Math.max(1, +$("terange").value || 2)); TE.lv5 = $("telv5").value;
+    TE.dtype = $("tedtype").value; TE.dmg = Math.min(2000, Math.max(1, +$("tedmg").value || 1)); TE.mult = +(TE.dmg / teBaseAtk(TE)).toFixed(2); if (document.activeElement !== $("temult")) $("temult").value = TE.mult; TE.interval = Math.min(4, Math.max(0.1, +$("teint").value || 1)); TE.range = Math.min(7, Math.max(1, +$("terange").value || 2)); TE.lv5 = $("telv5").value;
     TE.fx = {}; TE_FX.forEach(function(f){ var v = +$("fx-" + f[0]).value; if (v > 0) TE.fx[f[0]] = Math.min(f[4], v); });
     $("teradius").disabled = TE.mode !== "aoe";
   }
@@ -1083,28 +1085,29 @@ function teInit(){
     var pos = Math.max(0, Math.min(100, (Math.log(r) / Math.log(2) + 1) * 50));
     $("tebal").innerHTML = '<div class="row" style="justify-content:space-between"><b style="color:' + st[1] + '">' + st[0] + '</b><span class="count">전투력 ' + p.total.toFixed(1) + ' ÷ 비용 ' + c + 'G = ' + r.toFixed(2) + '</span></div>' +
       '<div class="gauge"><i style="left:' + pos + '%"></i><span style="left:' + ((Math.log(0.85)/Math.log(2)+1)*50) + '%;width:' + ((Math.log(1.15)-Math.log(0.85))/Math.log(2)*50) + '%"></span></div>' +
-      '<div class="count">초당 피해 ' + p.dps.toFixed(1) + ' · 효과 가치 +' + Math.round(p.util * 100) + '% · 지원 가치 ' + p.sup.toFixed(1) + '</div>';
+      '<div class="count">1회 피해 ' + TE.dmg + ' · 초당 피해 ' + p.dps.toFixed(1) + ' · 효과 가치 +' + Math.round(p.util * 100) + '% · 지원 가치 ' + p.sup.toFixed(1) + '</div>';
   }
   function update(){ read(); bal(); preview(); }
-  ["teword","teel","teconcept","temode","teradius","temult","teint","terange","telv5"].forEach(function(id){ $(id).addEventListener("input", update); $(id).addEventListener("change", update); });
+  ["teword","teel","teconcept","temode","teradius","tedmg","tedtype","teint","terange","telv5"].forEach(function(id){ $(id).addEventListener("input", update); $(id).addEventListener("change", update); });
   TE_FX.forEach(function(f){ $("fx-" + f[0]).addEventListener("input", update); });
+  $("temult").addEventListener("input", function(){ var m = Math.min(5, Math.max(0.1, +this.value || 1)); $("tedmg").value = +(teBaseAtk({word:$("teword").value.toUpperCase().replace(/[^A-Z]/g, "")}) * m).toFixed(1); update(); });
   $("teel").addEventListener("change", function(){ swatches(); recs(); });
   $("teword").addEventListener("change", function(){ recs(); });
   $("tepreset").onclick = function(){
     read(); var pr = TE_PRESET[TE.kind], b = teBase(TE.word.length >= 3 ? TE.word : "TOWER");
-    TE.mult = 1; TE.mode = pr.mode; TE.radius = pr.radius || 0; TE.fx = JSON.parse(JSON.stringify(pr.fx)); TE.interval = b.interval; TE.range = b.range;
+    teSetMult(TE, 1); TE.mode = pr.mode; TE.radius = pr.radius || 0; TE.fx = JSON.parse(JSON.stringify(pr.fx)); TE.interval = b.interval; TE.range = b.range;
     var rare = (TE.word.match(/[KJXQZ]/g) || []).length; if (rare) TE.fx.crit = (TE.fx.crit || 0) + 10 * rare;
     if (TE.word.length >= 7) TE.range = Math.min(4.5, TE.range + 0.5);
     if (!TE.concept) TE.concept = EL[TE.kind].n + " 속성 " + (TE_MODES.filter(function(m){ return m[0] === TE.mode; })[0][1]) + " 타워";
-    var r = teBalance(TE).after; TE.mult = r.mult; TE.fx = r.fx; TE.interval = r.interval;
+    var r = teBalance(TE).after; TE.mult = r.mult; TE.dmg = r.dmg; TE.fx = r.fx; TE.interval = r.interval;
     form(); bal(); toast("속성 기본 컨셉을 넣고 밸런스를 맞췄습니다.");
   };
   $("teauto").onclick = function(){
     read(); var res = teBalance(TE), a = res.before, z = res.after, rows = [];
-    if (a.mult !== z.mult) rows.push(["배율", a.mult, z.mult]); if (teCost(a) !== teCost(z)) rows.push(["비용", teCost(a) + "G", teCost(z) + "G"]); if (a.interval !== z.interval) rows.push(["공격 간격", a.interval + "초", z.interval + "초"]);
+    if (a.dmg !== z.dmg) rows.push(["공격력", a.dmg, z.dmg]); if (a.mult !== z.mult) rows.push(["배율", a.mult, z.mult]); if (teCost(a) !== teCost(z)) rows.push(["비용", teCost(a) + "G", teCost(z) + "G"]); if (a.interval !== z.interval) rows.push(["공격 간격", a.interval + "초", z.interval + "초"]);
     TE_FX.forEach(function(f){ var x = a.fx[f[0]] || 0, y = z.fx[f[0]] || 0; if (x !== y) rows.push([f[1], x + f[2], y + f[2]]); });
     rows.push(["전투력 ÷ 비용", teRatio(a).toFixed(2), teRatio(z).toFixed(2)]);
-    TE.mult = z.mult; TE.fx = z.fx; TE.interval = z.interval; form(); bal();
+    TE.mult = z.mult; TE.dmg = z.dmg; TE.fx = z.fx; TE.interval = z.interval; form(); bal();
     $("tebaldiff").innerHTML = table(["항목","조정 전","조정 후"], rows.map(function(r){ return [r[0], String(r[1]), "<b>" + r[2] + "</b>"]; }));
   };
   /* 겹침 분석 */
@@ -1136,7 +1139,7 @@ function teInit(){
     if (TE.word.length < 3){ toast("단어를 영문 3글자 이상 적어 주세요."); $("teword").focus(); return; }
     if (!TE.px.some(Boolean)){ toast("디자인이 비어 있습니다. 그리거나 추천 디자인을 불러와 주세요."); return; }
     if (!teDb){ toast("이 화면에서는 저장할 수 없습니다."); return; }
-    var body = {word:TE.word, kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3), updatedAt:Date.now()};
+    var body = {word:TE.word, kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, dmg:TE.dmg, dtype:TE.dtype, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3), updatedAt:Date.now()};
     try { await teDb.collection("towers").doc(TE.word).set(body); toast("‘" + TE.word + "’ 타워를 저장했습니다."); }
     catch (e){ toast(e && e.code === "quota_exceeded" ? "저장 공간이 가득 찼습니다. 안 쓰는 타워를 지워 주세요." : "저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요."); }
   };
@@ -1158,7 +1161,7 @@ function teRenderSaved(){
     var lo = document.createElement("button"); lo.className = "btn"; lo.textContent = "불러오기";
     lo.onclick = function(){ var fx = {}; if (t.fx && typeof t.fx === "object") TE_FX.forEach(function(f){ var v = +t.fx[f[0]]; if (v > 0) fx[f[0]] = Math.min(f[4], v); });
       TE = teDefault(); TE.word = String(t.word || d.id).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); TE.kind = kind; TE.concept = String(t.concept || ""); TE.mode = TE_MODES.some(function(m){ return m[0] === t.mode; }) ? t.mode : "single";
-      TE.radius = +t.radius || 0; TE.mult = +t.mult || 1; TE.interval = +t.interval || 1; TE.range = +t.range || 2; TE.fx = fx; TE.lv5 = String(t.lv5 || ""); TE.px = px; TE.color = EL[kind].m;
+      TE.radius = +t.radius || 0; TE.mult = +t.mult || 1; TE.dmg = +t.dmg > 0 ? Math.min(2000, +t.dmg) : +(teBaseAtk(TE) * TE.mult).toFixed(1); TE.dtype = ["physical","magic","true"].indexOf(t.dtype) >= 0 ? t.dtype : "physical"; TE.interval = +t.interval || 1; TE.range = +t.range || 2; TE.fx = fx; TE.lv5 = String(t.lv5 || ""); TE.px = px; TE.color = EL[kind].m;
       render("toweredit"); window.scrollTo(0, 0); toast("‘" + TE.word + "’ 타워를 불러왔습니다."); };
     var del = document.createElement("button"); del.className = "btn dan"; del.textContent = "삭제"; var armed = 0;
     del.onclick = async function(){ if (Date.now() - armed > 3000){ armed = Date.now(); del.textContent = "한 번 더"; setTimeout(function(){ del.textContent = "삭제"; }, 3000); return; } try { await teDb.collection("towers").doc(d.id).delete(); toast("타워를 삭제했습니다."); } catch (e){ toast("삭제하지 못했습니다. 잠시 뒤 다시 눌러 주세요."); } };
