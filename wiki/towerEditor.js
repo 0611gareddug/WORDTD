@@ -98,7 +98,7 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<section class="te-col"><h3 class="te-h">픽셀 디자인 <small id="tesizelbl">16 × 16</small></h3><p class="te-desc">타워의 생김새를 한 칸씩 칠한다. 게임에서는 작게 보이므로 굵은 실루엣과 속성 색 한두 가지가 눈에 잘 띈다. 아래쪽 두세 줄은 받침대로 남겨 두면 단어 띠와 잘 어울린다.</p>' +
   '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 120px">해상도 (칸 수)<select id="tes"><option value="16">16 × 16 (기본)</option><option value="24">24 × 24</option><option value="32">32 × 32 (세밀)</option></select><small class="hint">칸이 많을수록 세밀하지만 게임 안에서는 같은 크기로 줄어든다</small></label><label class="field" style="flex:1 1 120px">칸 크기 (확대)<select id="tez"><option value="240">작게</option><option value="320">보통</option><option value="420">크게</option><option value="560">아주 크게</option></select><small class="hint">그리기 편하게 격자 화면만 키운다</small></label></div><div class="tecwrap"><canvas id="tec" width="384" height="384" aria-label="타워 픽셀 편집 격자"></canvas></div>' +
   '<div class="row te-tools" id="tetools"><button class="btn on" data-t="pen">펜</button><button class="btn" data-t="erase">지우개</button><button class="btn" data-t="fill">채우기</button><button class="btn" data-t="pick">스포이드</button><button class="btn" id="temir" aria-pressed="false">좌우 대칭</button></div>' +
-  '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 격자에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p><h3 class="te-h">이미지로 그리기</h3><p class="te-desc">그림 파일을 올리거나 끌어다 놓으면 배경을 지우고(누끼) 지금 해상도의 픽셀로 바꿔 준다. 배경이 단색이거나 투명한 그림, 캐릭터 일러스트가 가장 잘 된다. 바꾼 뒤 펜으로 다듬으면 된다.</p><label class="drop" id="tedrop"><input type="file" id="tefile" accept="image/*" hidden><b>이미지를 여기에 끌어다 놓거나 눌러서 고르기</b><small>PNG·JPG·GIF·WEBP · 복사한 이미지는 붙여넣기(Ctrl+V)</small></label><div class="row" style="gap:8px"><label class="field" style="flex:1 1 140px">배경 지우기<select id="tebg"><option value="auto">자동 (가장자리 색 지우기)</option><option value="alpha">투명한 부분만</option><option value="none">지우지 않음</option></select></label><label class="field" style="flex:1 1 140px">배경 허용 오차 <span id="tetolv" class="count">40</span><input type="range" id="tetol" min="5" max="140" value="40"><small class="hint">배경이 덜 지워지면 올리고, 그림까지 지워지면 내린다</small></label></div><div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">색 수<select id="tecols"><option>6</option><option>8</option><option selected>12</option><option>16</option><option>24</option></select></label><label class="chk"><input type="checkbox" id="teol" checked> 검은 외곽선</label><label class="chk"><input type="checkbox" id="teped" checked> 받침대 붙이기</label></div><div class="row" style="gap:6px"><button class="btn" id="teredo" disabled>설정 바꿔 다시 변환</button><span class="count" id="teimgst"></span></div>' +
+  '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 칠한 칸이나 밑그림에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p><h3 class="te-h">이미지에서 색 가져오기</h3><p class="te-desc">참고할 그림을 올리면 격자 뒤에 <b>밑그림</b>으로 깔리고, 그림에 쓰인 색을 뽑아 <b>팔레트</b>로 만들어 준다. 밑그림을 따라 펜으로 칠하고, <b>스포이드</b>로 밑그림을 누르면 그 자리 색을 바로 집는다.</p><label class="drop" id="tedrop"><input type="file" id="tefile" accept="image/*" hidden><b>이미지를 여기에 끌어다 놓거나 눌러서 고르기</b><small>PNG·JPG·GIF·WEBP · 휴대폰은 눌러서 사진첩에서 고르기</small></label><div class="row" style="gap:6px"><button class="btn" id="tepaste" type="button">복사한 이미지 붙여넣기</button><span class="count" id="teimgst"></span></div><div class="pastebox" id="tepastebox" contenteditable="true" hidden aria-label="이미지 붙여넣기 칸">이 칸을 길게 누르고 ‘붙여넣기’를 고르세요</div><div id="terefbox" hidden><div class="row" style="gap:8px;align-items:flex-end"><label class="chk"><input type="checkbox" id="teref" checked> 밑그림 보이기</label><label class="field" style="flex:1 1 120px">밑그림 진하기<input type="range" id="terefo" min="10" max="90" value="45"></label><label class="field" style="flex:1 1 120px">밑그림 크기<input type="range" id="terefs" min="40" max="250" value="100"></label></div><div class="row" style="gap:8px;align-items:flex-end"><label class="field" style="flex:1 1 120px">좌우 위치<input type="range" id="terefx" min="-50" max="50" value="0"></label><label class="field" style="flex:1 1 120px">위아래 위치<input type="range" id="terefy" min="-50" max="50" value="0"></label></div><div class="row" style="gap:8px;align-items:flex-end"><label class="field" style="flex:0 1 110px">뽑을 색 수<select id="tecols"><option>6</option><option selected>10</option><option>16</option><option>24</option></select></label><label class="chk"><input type="checkbox" id="tenobg" checked> 배경색 빼기</label><button class="btn" id="terefclr" type="button">밑그림 치우기</button></div><b style="font-size:13px">그림에서 뽑은 색</b><div class="swatches" id="teimgpal"></div><p class="te-desc">색을 누르면 그 색으로 펜이 바뀐다. 이미 칠한 칸에서 스포이드를 쓰면 칠한 색을, 빈 칸에서 쓰면 밑그림 색을 집는다.</p></div>' +
   '<div class="row" style="gap:6px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">직접 고르기<input type="color" id="tecol" value="#f08a24" style="width:48px;min-height:36px;padding:2px"></label><button class="btn" id="teundo">되돌리기</button><button class="btn" id="teclear">비우기</button></div>' +
   '<h3 class="te-h">인게임 미리보기</h3><p class="te-desc">왼쪽은 실제 게임 칸 크기, 오른쪽은 크게 본 모습이다. 칸 크기에서도 무슨 타워인지 알아볼 수 있는지 확인하자. 단어 띠의 아래 테두리 색은 속성 색이다.</p><div class="te-prev"><div class="board" style="aspect-ratio:3/2;max-width:200px"><canvas id="teprevbg"></canvas><div class="bt" style="left:33.33%;top:0;width:33.33%;height:50%"><img id="teprev" alt="미리보기"><span class="plate" id="teplate">WORD</span></div></div><div class="tcell" id="tebig"></div></div>' +
   '<h3 class="te-h">디자인 자동 추천</h3><p class="te-desc">고른 속성의 기존 단어 아이콘 8개를 후보로 보여 준다 (단어가 이미 목록에 있으면 그 아이콘이 첫 번째). 마음에 드는 것을 눌러 불러온 뒤, 새 단어 뜻에 맞게 고쳐 그리면 된다. 아래 네 줄은 공통 받침대이니 그대로 두고 위쪽 아이콘만 고치면 된다. ‘다른 후보 보기’로 계속 넘겨 볼 수 있다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
@@ -128,7 +128,9 @@ function teInit(){
   var cv = document.getElementById("tec"), ctx = cv.getContext("2d");
   var $ = function(id){ return document.getElementById(id); };
   function N(){ return pxN(TE.px); }
-  function grid(){ var n = N(), c = 384 / n; ctx.clearRect(0,0,384,384); for (var y = 0; y < n; y++) for (var x = 0; x < n; x++){ ctx.fillStyle = (x + y) % 2 ? "#c9ccd3" : "#bfc2ca"; ctx.fillRect(x*c, y*c, c, c); if (TE.px[y*n+x]){ ctx.fillStyle = TE.px[y*n+x]; ctx.fillRect(x*c, y*c, c, c); } }
+  function grid(){ var n = N(), c = 384 / n, x, y; ctx.clearRect(0,0,384,384); for (y = 0; y < n; y++) for (x = 0; x < n; x++){ ctx.fillStyle = (x + y) % 2 ? "#c9ccd3" : "#bfc2ca"; ctx.fillRect(x*c, y*c, c, c); }
+    if (ref && $("teref").checked){ ctx.globalAlpha = +$("terefo").value / 100; ctx.drawImage(refC, 0, 0); ctx.globalAlpha = 1; }
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) if (TE.px[y*n+x]){ ctx.fillStyle = TE.px[y*n+x]; ctx.fillRect(x*c, y*c, c, c); }
     if (TE.mirror){ ctx.fillStyle = "rgba(53,82,201,.6)"; ctx.fillRect(191, 0, 2, 384); }
     $("tesizelbl").textContent = n + " × " + n; }
   function preview(){
@@ -147,7 +149,7 @@ function teInit(){
   function at(e){ var n = N(), r = cv.getBoundingClientRect(); var x = Math.floor((e.clientX - r.left) / r.width * n), y = Math.floor((e.clientY - r.top) / r.height * n); return x < 0 || y < 0 || x >= n || y >= n ? -1 : y * n + x; }
   var down = false;
   function act(e, first){ var i = at(e); if (i < 0) return;
-    if (TE.tool === "pick"){ if (TE.px[i]){ TE.color = TE.px[i]; $("tecol").value = TE.color; swatches(); TE.tool = "pen"; tools(); } return; }
+    if (TE.tool === "pick"){ var pc = TE.px[i] || refAt(i); if (pc){ TE.color = pc; $("tecol").value = TE.color; swatches(); TE.tool = "pen"; tools(); } return; }
     if (TE.tool === "fill"){ if (first) fill(i, TE.color); }
     else setPx(i, TE.tool === "erase" ? null : TE.color);
     preview(); }
@@ -165,22 +167,49 @@ function teInit(){
   $("tes").value = N(); zoom();
   $("tes").onchange = function(){ var to = +this.value; if (to === N()) return; snap(); TE.px = pxResample(TE.px, to); preview(); toast(to + " × " + to + " 격자로 바꿨습니다. 되돌리기로 이전 크기로 돌아갈 수 있습니다."); };
   $("tez").onchange = function(){ TE.zoom = +this.value; zoom(); };
-  /* 이미지로 그리기 */
-  var lastImg = null;
-  function loadFile(f){ if (!f || !/^image\//.test(f.type)){ toast("이미지 파일만 쓸 수 있습니다 (PNG, JPG, GIF, WEBP)."); return; } if (f.size > 15 * 1024 * 1024){ toast("파일이 너무 큽니다 (15MB 이하)."); return; }
-    var u = URL.createObjectURL(f), im = new Image(); im.onload = function(){ lastImg = im; $("teredo").disabled = false; convert(); }; im.onerror = function(){ toast("이미지를 읽지 못했습니다. 다른 파일로 해 보세요."); URL.revokeObjectURL(u); }; im.src = u; }
-  function convert(){ if (!lastImg) return; var res = imgToPx(lastImg, N(), {bg: $("tebg").value, tol: +$("tetol").value, cols: +$("tecols").value, outline: $("teol").checked, ped: $("teped").checked, kind: TE.kind});
-    if (!res){ $("teimgst").textContent = "남은 그림이 없습니다. 허용 오차를 낮추거나 ‘지우지 않음’을 골라 보세요."; return; }
-    snap(); TE.px = res.px; preview(); $("teimgst").textContent = "변환 완료: 색 " + res.colors + "개, 칠한 칸 " + res.filled + "개"; toast("이미지를 픽셀로 바꿨습니다. 펜으로 다듬어 보세요."); }
+  /* 이미지에서 색 가져오기: 밑그림 + 팔레트 */
+  var ref = null, refC = document.createElement("canvas"); refC.width = refC.height = 384; var rctx = refC.getContext("2d", {willReadFrequently: true});
+  function hex(r, g, b){ return "#" + [r, g, b].map(function(v){ return ("0" + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2); }).join(""); }
+  function layRef(){ rctx.clearRect(0, 0, 384, 384); if (!ref) return; var s = Math.min(384 / ref.width, 384 / ref.height) * (+$("terefs").value / 100), w = ref.width * s, h = ref.height * s;
+    rctx.imageSmoothingEnabled = true; rctx.drawImage(ref, (384 - w) / 2 + +$("terefx").value * 3.84, (384 - h) / 2 + +$("terefy").value * 3.84, w, h); }
+  function refAt(i){ if (!ref) return null; var n = N(), c = 384 / n, x = (i % n) * c, y = Math.floor(i / n) * c, d = rctx.getImageData(Math.floor(x), Math.floor(y), Math.max(1, Math.floor(c)), Math.max(1, Math.floor(c))).data, r = 0, g = 0, b = 0, k = 0;
+    for (var j = 0; j < d.length; j += 4) if (d[j+3] > 100){ r += d[j]; g += d[j+1]; b += d[j+2]; k++; } return k ? hex(r / k, g / k, b / k) : null; }
+  function refPalette(){ if (!ref) return; var S = 72, oc = document.createElement("canvas"); oc.width = oc.height = S; var o = oc.getContext("2d", {willReadFrequently: true}), sc = Math.min(S / ref.width, S / ref.height);
+    o.drawImage(ref, (S - ref.width * sc) / 2, (S - ref.height * sc) / 2, ref.width * sc, ref.height * sc); var d = o.getImageData(0, 0, S, S).data, pts = [], bg = null;
+    if ($("tenobg").checked){ var cnt = {}, best = 0; for (var e = 0; e < S; e++) [[e, 0], [e, S-1], [0, e], [S-1, e]].forEach(function(p){ var q = (p[1] * S + p[0]) * 4; if (d[q+3] < 100) return; var key = (d[q] >> 4) + "," + (d[q+1] >> 4) + "," + (d[q+2] >> 4); cnt[key] = (cnt[key] || 0) + 1; if (cnt[key] > best){ best = cnt[key]; bg = [d[q], d[q+1], d[q+2]]; } }); if (best < S * 0.6) bg = null; }
+    for (var j = 0; j < d.length; j += 4){ if (d[j+3] < 100) continue; if (bg && Math.abs(d[j] - bg[0]) + Math.abs(d[j+1] - bg[1]) + Math.abs(d[j+2] - bg[2]) < 60) continue; pts.push([d[j], d[j+1], d[j+2]]); }
+    if (!pts.length){ $("teimgpal").innerHTML = '<span class="count">뽑을 색이 없습니다. ‘배경색 빼기’를 꺼 보세요.</span>'; return; }
+    var K = Math.min(+$("tecols").value, pts.length), cen = [], used = {}; cen.push(pts[0]);
+    while (cen.length < K){ var far = -1, fi = 0; for (var a = 0; a < pts.length; a += 3){ var md = 1e9; for (var c2 = 0; c2 < cen.length; c2++){ var dd = Math.pow(pts[a][0]-cen[c2][0],2) + Math.pow(pts[a][1]-cen[c2][1],2) + Math.pow(pts[a][2]-cen[c2][2],2); if (dd < md) md = dd; } if (md > far){ far = md; fi = a; } } if (far < 300) break; cen.push(pts[fi].slice()); }
+    var asg = new Array(pts.length);
+    for (var it = 0; it < 8; it++){ var sum = cen.map(function(){ return [0, 0, 0, 0]; }); pts.forEach(function(p, pi){ var bi = 0, bd = 1e9; cen.forEach(function(cc, ci){ var dd = Math.pow(p[0]-cc[0],2) + Math.pow(p[1]-cc[1],2) + Math.pow(p[2]-cc[2],2); if (dd < bd){ bd = dd; bi = ci; } }); asg[pi] = bi; var s2 = sum[bi]; s2[0] += p[0]; s2[1] += p[1]; s2[2] += p[2]; s2[3]++; }); cen = cen.map(function(cc, ci){ var s2 = sum[ci]; return s2[3] ? [s2[0]/s2[3], s2[1]/s2[3], s2[2]/s2[3], s2[3]] : [cc[0], cc[1], cc[2], 0]; }); }
+    var cols = cen.filter(function(cc){ return cc[3] > 0; }).sort(function(a2, b2){ return b2[3] - a2[3]; }).map(function(cc){ return hex(cc[0], cc[1], cc[2]); }).filter(function(h){ if (used[h]) return false; used[h] = 1; return true; });
+    $("teimgpal").innerHTML = cols.map(function(h){ return '<button class="sw" data-c="' + h + '" style="background:' + h + '" aria-label="색 ' + h + '"></button>'; }).join("");
+    $("teimgst").textContent = "밑그림을 깔고 색 " + cols.length + "개를 뽑았습니다"; }
+  function setRef(im){ ref = im; $("terefbox").hidden = false; $("tepastebox").hidden = true; layRef(); refPalette(); grid(); toast("밑그림을 깔았습니다. 뽑은 색으로 따라 그려 보세요."); }
+  function loadFile(f){ if (!f || !/^image\//.test(f.type)){ toast("이미지 파일만 쓸 수 있습니다 (PNG, JPG, GIF, WEBP)."); return; } if (f.size > 15 * 1024 * 1024){ toast("파일이 너무 큽니다 (15MB 이하)."); return; } loadURL(URL.createObjectURL(f)); }
+  function loadURL(u){ var im = new Image(); im.onload = function(){ setRef(im); }; im.onerror = function(){ toast("이미지를 읽지 못했습니다. 다른 파일로 해 보세요."); }; im.src = u; }
   $("tefile").onchange = function(){ loadFile(this.files[0]); this.value = ""; };
   ["tedrop", "tec"].forEach(function(id){ var el = $(id);
     el.addEventListener("dragover", function(e){ e.preventDefault(); $("tedrop").classList.add("over"); });
     el.addEventListener("dragleave", function(){ $("tedrop").classList.remove("over"); });
     el.addEventListener("drop", function(e){ e.preventDefault(); $("tedrop").classList.remove("over"); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); }); });
-  if (!window.__tePaste){ window.__tePaste = 1; document.addEventListener("paste", function(e){ if (!document.getElementById("tec")) return; var items = (e.clipboardData && e.clipboardData.items) || []; for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0){ e.preventDefault(); var f = items[i].getAsFile(); var fn = window.__teLoad; if (fn) fn(f); return; } }); }
-  window.__teLoad = loadFile;
-  $("tetol").oninput = function(){ $("tetolv").textContent = this.value; };
-  $("teredo").onclick = convert;
+  /* 붙여넣기: PC는 Ctrl+V, 휴대폰은 버튼(클립보드 읽기) → 안 되면 길게 눌러 붙여넣는 칸 */
+  function pasteEvt(e){ var items = (e.clipboardData && e.clipboardData.items) || []; for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0){ e.preventDefault(); var f = items[i].getAsFile(); if (f){ loadFile(f); return true; } } return false; }
+  if (!window.__tePaste){ window.__tePaste = 1; document.addEventListener("paste", function(e){ if (!document.getElementById("tec") || e.target.id === "tepastebox") return; var fn = window.__tePasteEvt; if (fn) fn(e); }); }
+  window.__tePasteEvt = pasteEvt;
+  var pb = $("tepastebox");
+  pb.addEventListener("paste", function(e){ if (pasteEvt(e)) return; setTimeout(function(){ var img = pb.querySelector("img"); if (img && img.src){ loadURL(img.src); } else toast("붙여넣은 것 중에 이미지가 없습니다."); pb.innerHTML = "이 칸을 길게 누르고 ‘붙여넣기’를 고르세요"; }, 60); });
+  pb.addEventListener("focus", function(){ pb.textContent = ""; });
+  $("tepaste").onclick = function(){
+    function fallback(){ pb.hidden = false; pb.focus(); toast("아래 칸을 길게 누르고 ‘붙여넣기’를 고르세요."); }
+    if (!navigator.clipboard || !navigator.clipboard.read){ fallback(); return; }
+    navigator.clipboard.read().then(function(list){ for (var i = 0; i < list.length; i++){ var t = list[i].types.filter(function(x){ return x.indexOf("image") === 0; })[0]; if (t) return list[i].getType(t).then(function(bl){ loadFile(new File([bl], "paste", {type: bl.type || t})); }); } toast("클립보드에 이미지가 없습니다. 이미지를 먼저 복사하세요."); }).catch(fallback); };
+  ["terefo","teref"].forEach(function(id){ $(id).addEventListener("input", grid); $(id).addEventListener("change", grid); });
+  ["terefs","terefx","terefy"].forEach(function(id){ $(id).addEventListener("input", function(){ layRef(); grid(); }); });
+  ["tecols","tenobg"].forEach(function(id){ $(id).addEventListener("change", refPalette); });
+  $("terefclr").onclick = function(){ ref = null; layRef(); $("terefbox").hidden = true; $("teimgst").textContent = ""; grid(); };
+  $("teimgpal").addEventListener("click", function(e){ var b = e.target.closest("[data-c]"); if (!b) return; TE.color = b.getAttribute("data-c"); $("tecol").value = TE.color; if (TE.tool === "erase" || TE.tool === "pick") TE.tool = "pen"; tools(); swatches(); [].forEach.call(this.querySelectorAll(".sw"), function(s){ s.classList.toggle("on", s === b); }); });
   var clr = 0; $("teclear").onclick = function(){ var b = this; if (Date.now() - clr > 3000){ clr = Date.now(); b.textContent = "한 번 더 누르면 비움"; setTimeout(function(){ b.textContent = "비우기"; }, 3000); return; } snap(); TE.px = TE.px.map(function(){ return null; }); b.textContent = "비우기"; clr = 0; preview(); };
   function recs(){
     var w = TE.word.length >= 3 ? TE.word : "TOWER", box = $("terecs"); box.innerHTML = "";
