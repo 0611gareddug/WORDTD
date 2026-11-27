@@ -21,6 +21,7 @@ json.dump(out,open('icons.json','w'),separators=(',',':'))
 js='''var TICON = %s;
 var TPAL = {k:"#1d2029",w:"#ffffff",e:"#f4ead2",s:"#c9ccd3",t:"#8c909b",u:"#555a68",q:"#3c3150",r:"#e8504a",o:"#ff9b3a",y:"#ffd34d",g:"#4cc35a",G:"#23763a",b:"#7a4a2a",n:"#c48a5a",c:"#8fd8ff",B:"#3f8cff",p:"#a77bff",P:"#e060d8",h:"#ff8fb0"};
 function iconTower(word, kind, legend){
+  if (typeof TCUSTOM !== "undefined" && TCUSTOM[word]) return TCUSTOM[word].slice();
   var rows = TICON[word]; if (!rows){ var sf = ["ING","ES","ED","ER","LY","S","D","R","Y"]; for (var si = 0; si < sf.length && !rows; si++){ var z = sf[si]; if (word.length > z.length + 2 && word.slice(-z.length) === z) rows = TICON[word.slice(0, -z.length)]; } } if (!rows) return null;
   var C = TG.EC[kind] || TG.EC.plain, g = [], i, x, y;
   for (i = 0; i < 256; i++) g.push(null);
