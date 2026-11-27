@@ -527,7 +527,8 @@ function validate(rows){
     dist = {}; var q = [B[0]]; dist[B[0][0] + "," + B[0][1]] = 0;
     while (q.length){ var p = q.shift(), d = dist[p[0] + "," + p[1]];
       [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(v){ var nx = p[0]+v[0], ny = p[1]+v[1], k = nx + "," + ny;
-        if (nx < 0 || ny < 0 || nx >= w || ny >= h || k in dist) return; if (PATHLIKE.indexOf(rows[ny][nx]) < 0) return; dist[k] = d + 1; q.push([nx, ny]); }); }
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || k in dist) return; if (PATHLIKE.indexOf(rows[ny][nx]) < 0) return; dist[k] = d + 1; q.push([nx, ny]); });
+      if (rows[p[1]][p[0]] === "O") for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) if (rows[yy][xx] === "M" && !(xx + "," + yy in dist)){ dist[xx + "," + yy] = d + 1; q.push([xx, yy]); } }
     S.forEach(function(s, n){ if (!(s[0] + "," + s[1] in dist)) msgs.push("입구 " + (n+1) + "(" + (s[0]+1) + "열 " + (s[1]+1) + "행)에서 기지까지 길이 이어져 있지 않습니다."); });
   }
   var lens = (dist ? S.map(function(s){ return dist[s[0] + "," + s[1]]; }).filter(function(v){ return v != null; }) : []);
