@@ -59,9 +59,9 @@ function taStep(o, dt){
     if (fx.chain && m !== "aura") o.chainNext = 0.18;
   }
   if (o.chainNext != null){ o.chainNext -= dt; if (o.chainNext <= 0){ o.chainNext = null; var t2 = alive.filter(function(e){ return e !== tgt; })[0]; if (tgt && t2){ o.fx.push({k:"zig", a:tgt, b:t2, t:0.25, T:0.25}); hit(t2, 0.7); } } }
-  /* 그리기: 공책 바탕 */
-  c.fillStyle = "#fbf6ea"; c.fillRect(0, 0, W, H); c.fillStyle = "#dce8f3"; for (var gx = 0; gx < W; gx += 8) c.fillRect(gx, 0, 1, H); for (var gy = 0; gy < H; gy += 8) c.fillRect(0, gy, W, 1);
-  c.fillStyle = "#efe3c4"; c.fillRect(20, H - 14, W - 20, 12); c.fillStyle = "#e3d3a8"; c.fillRect(20, H - 14, W - 20, 1); c.fillRect(20, H - 3, W - 20, 1);
+  /* 그리기: 회색 타일 바탕 */
+  for (var gx = 0; gx < W; gx += 8) for (var gy = 0; gy < H; gy += 8){ c.fillStyle = ((gx + gy) / 8) % 2 ? "#c9ccd3" : "#bfc2ca"; c.fillRect(gx, gy, 8, 8); }
+  c.fillStyle = "#8c909b"; c.fillRect(20, H - 14, W - 20, 12); c.fillStyle = "#6f7380"; c.fillRect(20, H - 3, W - 20, 1);
   if (st.mode === "aoe" && st.radius){ }
   if (o.trap && !o.trap.used){ c.fillStyle = col.d; c.fillRect(o.trap.x - 2, H - 8, 5, 2); c.fillStyle = col.m; c.fillRect(o.trap.x - 1, H - 10, 3, 2); }
   /* 적: 낙서 벌레 */

@@ -27,11 +27,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 /* 타이틀 */
 .titlebg{background:radial-gradient(ellipse at 50% 20%,#232838,var(--bg) 70%)}
 .title{max-width:460px;margin:0 auto;padding:8vh 18px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
-.logo{display:flex;gap:5px;align-items:center}.logo span{width:46px;height:52px;background:#f2d7a6;color:#2A2D3A;font-family:var(--pix);font-weight:700;font-size:30px;display:flex;align-items:center;justify-content:center;border-bottom:5px solid #c9a46a;box-shadow:0 3px 0 #0b0c10;animation:pop .5s backwards}
+.logo{display:flex;gap:5px;align-items:center}.logo span{width:46px;height:52px;background:#e8b84a;color:#2A2D3A;font-family:var(--pix);font-weight:700;font-size:30px;display:flex;align-items:center;justify-content:center;border-bottom:5px solid #a07820;box-shadow:0 3px 0 #0b0c10;animation:pop .5s backwards}
 .logo i{width:10px}.logo span:nth-child(2){animation-delay:.08s}.logo span:nth-child(3){animation-delay:.16s}.logo span:nth-child(4){animation-delay:.24s}.logo span:nth-child(6){animation-delay:.32s}.logo span:nth-child(7){animation-delay:.4s}
 @keyframes pop{from{transform:translateY(-20px) scale(.6);opacity:0}}
 .sub{margin:0;color:var(--mu)}
-.heroes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}.hero{display:flex;flex-direction:column;align-items:center;gap:2px;background:#FBF6EA;padding:6px 6px 4px;border-radius:4px;box-shadow:0 3px 0 #0b0c10}.hero b{font-family:var(--pix);font-size:9px;background:#F2D7A6;color:#2A2D3A;padding:1px 4px}
+.heroes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}.hero{display:flex;flex-direction:column;align-items:center;gap:2px;background:#c9ccd3;padding:6px 6px 4px;border-radius:2px;box-shadow:0 3px 0 #0b0c10}.hero b{font-family:var(--pix);font-size:9px;background:rgba(29,32,41,.88);color:#fff;padding:1px 4px}
 .menu{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:8px}.menu .btn{width:100%}
 .stat{color:var(--gold);font-size:13px;margin:4px 0 0}.foot{color:var(--mu);font-size:12px}
 /* 준비 */
@@ -55,18 +55,18 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .ncard{text-align:left;padding:10px;border:2px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:6px;border-radius:4px;box-shadow:0 3px 0 #0b0c10}
 .ncard:hover,.ncard:focus-visible{border-color:var(--sel)}.nt{display:flex;align-items:center;gap:6px}.nt b{font-size:16px}
 .nr{font-size:12px;background:var(--key);padding:6px 8px;line-height:1.5}.nr b{color:var(--gold)}.ncard small{color:var(--mu);font-size:11px}
-/* 스티커 */
+/* 유물 */
 .stks{display:flex;flex-direction:column;gap:8px}
 .stk{display:flex;gap:12px;align-items:center;text-align:left;padding:10px;border:2px solid var(--line);background:var(--panel);box-shadow:0 3px 0 #0b0c10;border-radius:4px;width:100%}
-.stk .face{flex:0 0 56px;height:56px;display:flex;align-items:center;justify-content:center;background:#fff;color:#2A2D3A;font-weight:700;font-size:15px;border:3px solid #fff;outline:2px solid var(--line)}
-.stk.r1 .face{background:linear-gradient(135deg,#f4f6fa,#c9ced8 50%,#f4f6fa)}.stk.r2 .face{background:linear-gradient(135deg,#ffd1ec,#c8f0ff 35%,#fff3b0 65%,#d4ffe0)}
-.stk .sd{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.stk b{font-size:15px}.stk em{font-style:normal;font-size:10px;color:var(--mu)}.stk.r1 em{color:#c9d2de}.stk.r2 em{color:#ff9ec7}.stk small{font-size:13px;color:#c7cad6;line-height:1.45}.stk i{font-style:normal;color:var(--gold);font-weight:700}
+.stk .face{flex:0 0 56px;height:56px;display:flex;align-items:center;justify-content:center;background:var(--key);color:var(--tx);font-weight:700;font-size:15px;border:3px solid #8c909b;box-shadow:inset 0 0 0 2px #0b0c10}
+.stk.r1 .face{border-color:var(--sel);color:var(--sel)}.stk.r2 .face{border-color:var(--gold);color:var(--gold);background:#3a3420}
+.stk .sd{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.stk b{font-size:15px}.stk em{font-style:normal;font-size:10px;color:var(--mu)}.stk.r1 em{color:var(--sel)}.stk.r2 em{color:var(--gold)}.stk small{font-size:13px;color:#c7cad6;line-height:1.45}.stk i{font-style:normal;color:var(--gold);font-weight:700}
 .shoplist{display:flex;flex-direction:column;gap:8px}.shopit{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;padding:10px;border:2px solid var(--line);background:var(--panel);border-radius:4px}.shopit small{grid-column:1;color:#c7cad6;font-size:12px}.shopit i{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;color:var(--gold);font-weight:700}
 .evcard{background:var(--panel);border:2px solid var(--line);padding:14px;margin-top:14px;display:flex;flex-direction:column;gap:8px}.evcard h3{margin:0}.evcard p{margin:0 0 6px;color:#c7cad6}
 .evopt{text-align:left;padding:12px;border:2px solid var(--line);background:var(--key);display:flex;flex-direction:column;gap:2px;border-radius:4px}.evopt small{color:var(--mu)}
-.stampbig{margin:18px auto 8px;width:150px;height:150px;border-radius:50%;border:5px solid #E0483E;color:#E0483E;background:#FBF6EA;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Gaegu',cursive;font-weight:700;font-size:22px;transform:rotate(-6deg);animation:stamp .4s;text-align:center;line-height:1.1}
-.stampbig small{font-size:14px}.stampbig.lose{border-color:var(--mu);color:#5b6174}
-@keyframes stamp{from{transform:rotate(-6deg) scale(2);opacity:0}}
+.stampbig{margin:22px auto 10px;padding:14px 18px;max-width:300px;text-align:center;background:var(--panel);border:3px solid var(--gold);box-shadow:0 4px 0 #0b0c10,inset 0 0 0 3px #3a3420;font-family:var(--pix);font-weight:700;font-size:30px;color:var(--gold);display:flex;flex-direction:column;gap:4px;animation:stamp .4s}
+.stampbig small{font-family:var(--ko);font-size:13px;color:var(--tx);font-weight:500}.stampbig.lose{border-color:var(--red);color:var(--red);box-shadow:0 4px 0 #0b0c10,inset 0 0 0 3px #3a2228}
+@keyframes stamp{from{transform:scale(1.6);opacity:0}}
 .stars{text-align:center;font-size:36px;color:var(--gold);letter-spacing:6px}.stars span{color:var(--line)}
 .rstat{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}.rstat div{background:var(--panel);border:2px solid var(--line);padding:8px;display:flex;flex-direction:column;align-items:center}.rstat span{font-size:11px;color:var(--mu)}.rstat b{font-family:var(--pix);font-size:18px}
 /* ---------- 전투 ---------- */

@@ -55,7 +55,7 @@ UI.title = function(){
   var hero = ["FIRE","FROST","ZAP","CAT","SUN","BOOM"].map(function(w){ return WMAP[w] ? '<span class="hero">' + sprImg(WMAP[w], 3) + '<b>' + w + '</b></span>' : ""; }).join("");
   UI.show('<div class="title"><div class="logo"><span>W</span><span>O</span><span>R</span><span>D</span><i></i><span>T</span><span>D</span></div>' +
     '<p class="sub">치는 단어가 곧 타워가 된다</p><div class="heroes">' + hero + '</div>' +
-    '<div class="menu">' + btn("공책 펼치기", "setup", "pri big") + btn("단어 사전", "dict", "") + btn("설정", "settings", "") + '</div>' +
+    '<div class="menu">' + btn("게임 시작", "setup", "pri big") + btn("단어 사전", "dict", "") + btn("설정", "settings", "") + '</div>' +
     '<p class="stat">별 ' + totalStars() + '개 · 발견한 단어 ' + Object.keys(SAVE.used).length + ' / ' + WORDS.length + '</p>' +
     '<p class="foot">영감: <a href="https://youtube.com/shorts/XlcxdyNHKjE" target="_blank" rel="noopener">원본 영상</a> · 타워 능력·그래픽은 독자 제작</p></div>', "titlebg");
 };
@@ -71,18 +71,18 @@ function maxGrade(i){ return Math.min(10, (SAVE.clear[i] || 0) + 1); }
 UI.renderSetup = function(){
   var s = UI.setupSel;
   var nbs = NOTEBOOKS.map(function(n, i){ var open = nbOpen(i), stars = 0; for (var g = 1; g <= 10; g++) stars += SAVE.stars[i + "_" + g] || 0;
-    return '<button class="nb' + (s.nb === i ? " on" : "") + '" data-act="nb" data-i="' + i + '"' + (open ? "" : " disabled") + ' style="--cv:' + n.cover + '"><b>' + n.n + '</b><span>' + n.m + '</span><small>' + (open ? "★ " + stars + " · 등급 " + (SAVE.clear[i] || 0) + " 클리어" : "앞 공책을 클리어하면 열림") + '</small></button>'; }).join("");
+    return '<button class="nb' + (s.nb === i ? " on" : "") + '" data-act="nb" data-i="' + i + '"' + (open ? "" : " disabled") + ' style="--cv:' + n.cover + '"><b>' + n.n + '</b><span>' + n.m + '</span><small>' + (open ? "★ " + stars + " · 등급 " + (SAVE.clear[i] || 0) + " 클리어" : "앞 챕터를 클리어하면 열림") + '</small></button>'; }).join("");
   var grades = ""; for (var g = 1; g <= maxGrade(s.nb); g++) grades += '<button class="seg' + (s.grade === g ? " on" : "") + '" data-act="grade" data-i="' + g + '">' + g + '</button>';
   var diffs = DIFF.map(function(d, i){ return '<button class="seg' + (s.diff === i ? " on" : "") + '" data-act="diff" data-i="' + i + '">' + d.n + '</button>'; }).join("");
   var pens = PENS.map(function(p){ var ok = penUnlocked(p); return '<button class="pen' + (s.pen === p.id ? " on" : "") + '" data-act="pen" data-id="' + p.id + '"' + (ok ? "" : " disabled") + '><b>' + p.n + '</b><span>' + (ok ? p.d : "잠김: " + p.unlock.t) + '</span></button>'; }).join("");
-  var sp = SPELLS.map(function(x){ var on = s.spells.indexOf(x.id) >= 0; return '<button class="spl' + (on ? " on" : "") + '" data-act="spell" data-id="' + x.id + '"><b>' + x.id + '</b><small>' + x.ko + ' · 잉크 ' + x.ink + '</small><span>' + x.d + '</span></button>'; }).join("");
-  UI.show('<div class="page"><div class="ph">' + btn("←", "title", "sq", ' aria-label="뒤로"') + '<h2>공책 고르기</h2></div>' +
-    '<h3>공책</h3><div class="nbs">' + nbs + '</div>' +
+  var sp = SPELLS.map(function(x){ var on = s.spells.indexOf(x.id) >= 0; return '<button class="spl' + (on ? " on" : "") + '" data-act="spell" data-id="' + x.id + '"><b>' + x.id + '</b><small>' + x.ko + ' · 마나 ' + x.ink + '</small><span>' + x.d + '</span></button>'; }).join("");
+  UI.show('<div class="page"><div class="ph">' + btn("←", "title", "sq", ' aria-label="뒤로"') + '<h2>챕터 고르기</h2></div>' +
+    '<h3>챕터</h3><div class="nbs">' + nbs + '</div>' +
     '<h3>등급 <small>높을수록 적 체력 +12%씩</small></h3><div class="segs">' + grades + '</div>' +
     '<h3>난이도</h3><div class="segs">' + diffs + '</div>' +
-    '<h3>펜 <small>판 전체에 적용되는 특징</small></h3><div class="pens">' + pens + '</div>' +
-    '<h3>주문 2개 <small>잉크를 모아 단어로 발동</small></h3><div class="spls">' + sp + '</div>' +
-    '<div class="sticky">' + btn("이 공책으로 시작", "begin", "pri big") + '</div></div>');
+    '<h3>직업 <small>판 전체에 적용되는 특징</small></h3><div class="pens">' + pens + '</div>' +
+    '<h3>주문 2개 <small>마나를 모아 단어로 발동</small></h3><div class="spls">' + sp + '</div>' +
+    '<div class="sticky">' + btn("이 챕터로 시작", "begin", "pri big") + '</div></div>');
 };
 /* ---------- 판 시작 ---------- */
 UI.begin = function(){
@@ -104,8 +104,8 @@ function makeRoute(){
   return r;
 }
 function RUN_NB(){ return UI.setupSel ? UI.setupSel.nb : 0; }
-/* ---------- 공책 지도 ---------- */
-var NODE = {fight:["전투","⚔"], elite:["엘리트","★"], shop:["문구점","🛍"], rest:["쉬는 시간","🔔"], boss:["보스","☠"]};
+/* ---------- 챕터 지도 ---------- */
+var NODE = {fight:["전투","⚔"], elite:["엘리트","★"], shop:["상점","🛍"], rest:["이벤트","🔔"], boss:["보스","☠"]};
 function nodeIcon(t){ var p = {fight:"M0 0h2v1h1v1h1v1h1V2h1V1h1V0h1v2H7v1H6v1H5v1h1v1h1v1H6V6H5V5H3v1H2v1H1V6h1V5h1V4H2V3H1V2H0z", elite:"M3 0h2v2h3v2H6v1h1v3H5V6H3v2H1V5h1V4H0V2h3z", shop:"M2 0h4v2h2v6H0V2h2zM3 1v1h2V1z", rest:"M3 0h2v1h1v1h1v4h1v1H0V6h1V2h1V1h1zM3 7h2v1H3z", boss:"M1 0h6v1h1v4H7v1H6v2H2V6H1V5H0V1h1zM2 2v2h1V2zM5 2v2h1V2z"}[t];
   var c = {fight:"#E8EAF3", elite:"#ff6b8a", shop:"#6be36b", rest:"#FFD34D", boss:"#FF5A6E"}[t]; return '<svg width="22" height="22" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="' + p + '" fill="' + c + '"></path></svg>'; }
 function ruleText(n){ return (n.rules || []).map(function(r){ return '<b>' + r.n.replace("○", n.letter || "○") + '</b> ' + r.d.replace(/○/g, n.letter || "○"); }).join("<br>"); }
@@ -115,16 +115,16 @@ UI.map = function(){
     var cells = opts.map(function(n, j){ var chosen = RUN.chosen[i] === j, past = i < row, next = i === row;
       var cls = past ? (chosen ? "done" : "skip") : next ? "next" : "fut";
       return '<button class="node ' + cls + '"' + (next ? ' data-act="go" data-j="' + j + '"' : " disabled") + '>' + nodeIcon(n.type) + '<span>' + NODE[n.type][0] + '</span></button>'; }).join("");
-    return '<div class="mrow"><span class="pg">' + (i + 1) + '쪽</span><div class="mcells">' + cells + '</div></div>'; }).reverse().join("");
+    return '<div class="mrow"><span class="pg">' + (i + 1) + '</span><div class="mcells">' + cells + '</div></div>'; }).reverse().join("");
   var next = RUN.route[row] || [], cards = next.map(function(n, j){ return '<button class="ncard" data-act="go" data-j="' + j + '"><div class="nt">' + nodeIcon(n.type) + '<b>' + NODE[n.type][0] + '</b></div>' +
-    (n.rules ? '<div class="nr">' + ruleText(n) + '</div>' : '<div class="nr">' + {shop:"스티커·주문·레벨업 쿠폰을 산다", rest:"무작위 이벤트 하나"}[n.type] + '</div>') +
-    '<small>' + {fight:"보상: 스티커 3개 중 1개", elite:"보상: 반짝 이상 스티커 + 골드", shop:"골드를 쓴다", rest:"선택에 따라", boss:"공책 클리어"}[n.type] + '</small></button>'; }).join("");
+    (n.rules ? '<div class="nr">' + ruleText(n) + '</div>' : '<div class="nr">' + {shop:"유물·주문·레벨업 쿠폰을 산다", rest:"무작위 이벤트 하나"}[n.type] + '</div>') +
+    '<small>' + {fight:"보상: 유물 3개 중 1개", elite:"보상: 희귀 이상 유물 + 골드", shop:"골드를 쓴다", rest:"선택에 따라", boss:"챕터 클리어"}[n.type] + '</small></button>'; }).join("");
   var nb = NOTEBOOKS[RUN.nb];
   UI.show('<div class="page mappage"><div class="ph" style="--cv:' + nb.cover + '"><h2>' + nb.n + '</h2><span>' + nb.m + ' · 등급 ' + RUN.grade + ' · ' + DIFF[RUN.diff].n + ' · ' + PENS.filter(function(p){ return p.id === RUN.pen; })[0].n + '</span></div>' +
-    runBar() + '<div class="mapnodes">' + rows + '</div><h3>' + (row + 1) + '쪽: 어디로 갈까?</h3><div class="ncards">' + cards + '</div>' +
-    '<div class="row2">' + btn("스티커 보기", "stickers", "") + btn("판 포기", "abandon", "danger") + '</div></div>');
+    runBar() + '<div class="mapnodes">' + rows + '</div><h3>' + (row + 1) + '스테이지: 어디로 갈까?</h3><div class="ncards">' + cards + '</div>' +
+    '<div class="row2">' + btn("유물 보기", "stickers", "") + btn("판 포기", "abandon", "danger") + '</div></div>');
 };
-function runBar(){ return '<div class="runbar"><span class="hp">♥ ' + RUN.life + '/' + RUN.maxLife + '</span><span class="gd">● ' + RUN.gold + 'G</span><span>주문 ' + RUN.spells.join(" · ") + '</span><span>스티커 ' + RUN.stickers.length + '/8</span></div>'; }
+function runBar(){ return '<div class="runbar"><span class="hp">♥ ' + RUN.life + '/' + RUN.maxLife + '</span><span class="gd">● ' + RUN.gold + 'G</span><span>주문 ' + RUN.spells.join(" · ") + '</span><span>유물 ' + RUN.stickers.length + '/8</span></div>'; }
 UI.go = function(j){
   var n = RUN.route[RUN.page][j]; RUN.chosen[RUN.page] = j; RUN.node = n;
   if (n.type === "shop") return UI.shop(true);
@@ -139,18 +139,18 @@ UI.battle = function(n){
   RUN.longWords = !!RUN.nextLong; RUN.nextLong = false;
   startPage(n); UI.buildKb(); IN.clear();
   $("rulebar").innerHTML = (n.rules || []).map(function(r){ return '<span><b>' + r.n.replace("○", n.letter || "") + '</b> ' + r.d.replace(/○/g, n.letter || "○") + '</span>'; }).join("");
-  $("pagel").textContent = (RUN.page + 1) + " / 7쪽"; $("pageb").style.width = (RUN.page / 7 * 100) + "%";
+  $("pagel").textContent = (RUN.page + 1) + "/7 스테이지"; $("pageb").style.width = (RUN.page / 7 * 100) + "%";
   UI.side();
   setTimeout(function(){ rResize(); draw(); }, 0);
   if (!IN.touch()) setTimeout(function(){ $("ti").focus(); }, 50);
   UI.onWave(); SFX.play("page");
   if (!SAVE.tut){ UI.tut = 0; UI.tutStep(); }
-  else UI.hint(n.type === "boss" ? "보스 쪽! 체력이 줄면 약점 단어가 뜬다. 쳐서 패턴을 끊자." : "");
+  else UI.hint(n.type === "boss" ? "보스 스테이지! 체력이 줄면 약점 단어가 뜬다. 쳐서 패턴을 끊자." : "");
 };
 UI.side = function(){ var st = RUN.stickers.map(function(id){ var s = STICKERS.filter(function(x){ return x.id === id; })[0]; return '<span><b>' + s.n + '</b> ' + s.d + '</span>'; }).join("") || "<span>아직 없음</span>";
   var pen = PENS.filter(function(p){ return p.id === RUN.pen; })[0];
-  $("side").innerHTML = '<h4>펜: ' + pen.n + '</h4><div class="ss"><span>' + pen.d + '</span></div><h4>스티커 ' + RUN.stickers.length + '/8</h4><div class="ss">' + st + '</div>' +
-    '<h4>조작</h4><div class="ss"><span>칸 클릭 → 단어 입력 → <kbd>Enter</kbd> 건설</span><span>적 머리 위 단어 입력 → <kbd>Enter</kbd> 타격</span><span>주문 단어(' + RUN.spells.join(", ") + ') → 잉크로 발동</span><span><kbd>Tab</kbd> 단어 사전 · <kbd>Esc</kbd> 지우기 · <kbd>Space</kbd> 일시정지 · <kbd>한/영</kbd> 언어</span></div>'; };
+  $("side").innerHTML = '<h4>직업: ' + pen.n + '</h4><div class="ss"><span>' + pen.d + '</span></div><h4>유물 ' + RUN.stickers.length + '/8</h4><div class="ss">' + st + '</div>' +
+    '<h4>조작</h4><div class="ss"><span>칸 클릭 → 단어 입력 → <kbd>Enter</kbd> 건설</span><span>적 머리 위 단어 입력 → <kbd>Enter</kbd> 타격</span><span>주문 단어(' + RUN.spells.join(", ") + ') → 마나로 발동</span><span><kbd>Tab</kbd> 단어 사전 · <kbd>Esc</kbd> 지우기 · <kbd>Space</kbd> 일시정지 · <kbd>한/영</kbd> 언어</span></div>'; };
 UI.onWave = function(){ if (!B) return; var w = $("wavel"); if (B.phase === "prep") w.textContent = "준비"; else w.textContent = "웨이브 " + Math.min(B.wave + 1, B.waves) + "/" + B.waves; UI.hudNow(); };
 UI.hudNow = function(){ if (!RUN || !B) return;
   $("hp").textContent = RUN.life; $("gold").textContent = RUN.gold;
@@ -186,7 +186,7 @@ UI.refreshInput = function(){
   ml.textContent = icons[d.k] || ""; ic.className = "modei m-" + d.k;
   var h = "";
   if (d.k === "empty") h = B.sel ? (B.towers[B.sel] ? "같은 단어를 치면 합성 (Lv+1)" : "이 칸에 지을 단어를 입력하세요") : "칸을 누르거나, 적 머리 위 단어를 치세요";
-  else if (d.k === "spell") h = "주문 " + d.sp.id + " · 잉크 " + d.sp.ink + (B.ink < d.sp.ink ? ' <b class="red">(부족)</b>' : "") + " · " + d.sp.d;
+  else if (d.k === "spell") h = "주문 " + d.sp.id + " · 마나 " + d.sp.ink + (B.ink < d.sp.ink ? ' <b class="red">(부족)</b>' : "") + " · " + d.sp.d;
   else if (d.k === "build"){ var r = d.res, st = wordStats(r.w, r.ko ? null : r.typed), c = d.cost; h = chipEl(r.w.k) + ' <b>' + esc(r.label) + '</b>' + (r.w.ko && !r.ko ? ' ' + esc(r.w.ko) : r.ko ? ' ' + r.w.w : "") + ' · ' + (c.merge ? "합성 " : "") + '<b class="' + (RUN.gold < c.c ? "red" : "gd") + '">' + c.c + 'G</b> · <small>' + MODEN[st.mode] + ' ' + Math.round(st.dmg) + ' · ' + st.interval + '초 · 사거리 ' + st.range + (c.notes.length ? ' · ' + c.notes.join(", ") : "") + ' · ' + esc(r.w.a || "") + '</small>'; }
   else if (d.k === "strike") h = '적 단어 <b>' + esc(t) + '</b> 타격! Enter';
   else if (d.k === "partial") h = "적 단어 입력 중…";
@@ -209,14 +209,14 @@ UI.submit = function(){
 };
 UI.relabelEnemies = function(){ if (!B) return; B.enemies.forEach(function(e){ if (e.boss){ if (e.word) e.word = IN.lang === "ko" ? e.bd.ko : e.bd.weak; return; } if (e.wobj){ if (IN.lang === "ko" && e.wobj.ko) e.word = e.wobj.ko; else if (IN.lang === "ko"){ var ew = enemyWord(2); e.word = ew.s; e.wobj = ew.w; } else e.word = e.wobj.w; } }); };
 UI.sealKeys = function(){ if (IN.lang === "ko") return; var ks = shuffle("AEIOURSTLN".split("")).slice(0, 2); IN.sealed = {}; ks.forEach(function(k){ IN.sealed[k] = 1; }); IN.sealT = 5; UI.toast("렉시콘이 글자를 봉인했다: " + ks.join(", ")); UI.buildKb(); };
-UI.stampCombo = function(n){ UI.banner("콤보 " + n + "! 참 잘했어요", "#ff9ec7"); };
+UI.stampCombo = function(n){ UI.banner("콤보 " + n + "!", "#ff9ec7"); };
 UI.newWord = function(w){ UI.banner("NEW WORD! " + w.w + (w.ko ? " · " + w.ko : ""), "#8FD8FF"); };
 /* 타워 정보 */
 UI.openTower = function(t){
   var st = t.st, c = upgradeCost(t), sv = sellValue(t), TG2 = {first:"선두", last:"최후미", strong:"최대 체력", weak:"최소 체력", close:"가까운 적", fly:"비행 우선"};
   $("tpanel").innerHTML = '<div class="tph">' + sprImg(t.w, 2) + '<div><b>' + esc(t.typed) + '</b> ' + (t.w.ko ? esc(t.w.ko) + ' ' : '') + chipEl(t.w.k) + ' <span class="lv">Lv' + t.lv + '</span><br><small>' + MODEN[st.mode] + ' · 피해 ' + Math.round(st.dmg) + ' · ' + st.interval.toFixed(2) + '초 · 사거리 ' + st.range.toFixed(2) + (t.res ? ' · 공명 ' + t.res : '') + '</small></div>' + btn("✕", "closet", "sq", ' aria-label="닫기"') + '</div>' +
     '<p class="tpa">' + esc(t.w.a || "") + (t.w.v ? ' <small>★Lv5 ' + esc(t.w.v) + '</small>' : "") + '</p>' +
-    '<div class="tpb">' + (t.lv < 3 ? btn("업그레이드 " + c + "G", "upg", RUN.gold >= c ? "pri" : "") : '<span class="note">Lv4부터는 같은 단어 합성</span>') + btn("판매 +" + sv + "G" + (RUN.erasers > 0 ? " (지우개)" : ""), "sell", "danger") + btn("타겟: " + TG2[t.tgt], "tgt", "") + '</div>';
+    '<div class="tpb">' + (t.lv < 3 ? btn("업그레이드 " + c + "G", "upg", RUN.gold >= c ? "pri" : "") : '<span class="note">Lv4부터는 같은 단어 합성</span>') + btn("판매 +" + sv + "G" + (RUN.erasers > 0 ? " (환불권)" : ""), "sell", "danger") + btn("타겟: " + TG2[t.tgt], "tgt", "") + '</div>';
   $("tpanel").hidden = false; UI.tpT = t;
 };
 UI.closeTower = function(){ $("tpanel").hidden = true; UI.tpT = null; };
@@ -249,16 +249,16 @@ UI.buildKb = function(){
 /* ---------- 튜토리얼 ---------- */
 UI.hint = function(t){ var h = $("hint"); h.innerHTML = t || ""; h.hidden = !t; };
 var TUT = [
-  ["tile", "① 맵의 <b>빈 칸</b>(형광펜 길이 아닌 곳)을 눌러 고르세요."],
+  ["tile", "① 맵의 <b>빈 칸</b>(길이 아닌 곳)을 눌러 고르세요."],
   ["build", "② <b>FIRE</b>(또는 <b>불</b>)를 입력하고 <b>확정</b>. 단어가 곧 타워가 됩니다. 길 옆 칸일수록 좋아요."],
   ["wave", "③ 두세 개 더 지어 보고 <b>웨이브 ▶</b>로 시작하세요. 비용은 글자 점수로 정해져요."],
   ["strike", "④ 적 머리 위 <b>단어</b>를 그대로 치고 확정하면 직접 때립니다! 이어 치면 콤보."],
-  ["done", "좋아요! 콤보로 잉크를 모으면 주문(STOP, RUSH…)을 쓸 수 있어요."]
+  ["done", "좋아요! 콤보로 마나를 모으면 주문(STOP, RUSH…)을 쓸 수 있어요."]
 ];
 UI.tutStep = function(){ var s = TUT[UI.tut]; if (!s){ UI.hint(""); SAVE.tut = true; save(); return; } UI.hint(s[1]); if (s[0] === "done") setTimeout(function(){ if (UI.tut === TUT.length - 1){ UI.tut++; UI.tutStep(); } }, 6000); };
 UI.tutEvent = function(ev){ if (SAVE.tut || UI.tut == null) return; var s = TUT[UI.tut]; if (s && s[0] === ev){ UI.tut++; UI.tutStep(); } };
 
-/* ---------- 쪽 클리어 → 보상 ---------- */
+/* ---------- 스테이지 클리어 → 보상 ---------- */
 UI.pageCleared = function(){
   if (!RUN || !B) return; if (!SAVE.tut && UI.tut != null){ SAVE.tut = true; save(); UI.hint(""); }
   save();
@@ -274,55 +274,55 @@ UI.reward = function(elite){
   var mul = RUN.rewardMul || 1; RUN.rewardMul = 1;
   if (elite){ addGoldRun(40 * mul); }
   RUN.offer = rollStickers(3, elite);
-  UI.show('<div class="page"><div class="stampbig">참 잘했어요<small>' + (RUN.page + 1) + '쪽 클리어</small></div>' +
+  UI.show('<div class="page"><div class="stampbig">CLEAR!<small>' + (RUN.page + 1) + '스테이지 클리어</small></div>' +
     '<p class="center mute">처치 ' + B.pageKills + ' · 최고 콤보 ' + B.maxCombo + ' · 골드 +' + Math.max(0, RUN.gold - B.goldStart) + (elite ? ' (엘리트 보너스 포함)' : '') + '</p>' + runBar() +
-    '<h3>스티커 하나 고르기 <small>표지 칸 ' + RUN.stickers.length + '/8</small></h3><div class="stks">' + RUN.offer.map(function(s){ return stickerCard(s, "takestk"); }).join("") + '</div>' +
+    '<h3>유물 하나 고르기 <small>유물 칸 ' + RUN.stickers.length + '/8</small></h3><div class="stks">' + RUN.offer.map(function(s){ return stickerCard(s, "takestk"); }).join("") + '</div>' +
     '<div class="row2">' + btn("대신 골드 " + 40 * mul + "G", "takegold", "") + '</div></div>');
   UI.rewardGold = 40 * mul;
 };
 function addGoldRun(g){ RUN.gold += g; }
 UI.takeSticker = function(id, after){
-  if (RUN.stickers.length >= 8){ UI.modal('<h3>스티커 칸이 가득 찼어요</h3><p>뗄 스티커를 고르세요.</p><div class="stks">' + RUN.stickers.map(function(x){ var s = STICKERS.filter(function(y){ return y.id === x; })[0]; return stickerCard(s, "replstk"); }).join("") + '</div>' + btn("취소", "closemodal", "")); UI.pendingStk = {id:id, after:after}; return; }
+  if (RUN.stickers.length >= 8){ UI.modal('<h3>유물 칸이 가득 찼어요</h3><p>버릴 유물를 고르세요.</p><div class="stks">' + RUN.stickers.map(function(x){ var s = STICKERS.filter(function(y){ return y.id === x; })[0]; return stickerCard(s, "replstk"); }).join("") + '</div>' + btn("취소", "closemodal", "")); UI.pendingStk = {id:id, after:after}; return; }
   RUN.stickers.push(id); onSticker(id); SFX.play("gold"); (after || UI.nextPage)();
 };
 function onSticker(id){ if (id === "wall"){ RUN.maxLife += 5; RUN.life += 5; } if (id === "freepen") RUN.freeTickets += 2; if (B) recalcAll(); }
-/* ---------- 문구점 ---------- */
+/* ---------- 상점 ---------- */
 UI.shop = function(fresh){
   UI.scene = "shop"; SFX.bgm(true);
   if (fresh){ RUN.shopItems = rollStickers(2, false).map(function(s){ return {s:s, price:[60, 100, 150][s.r]}; }); RUN.refresh = 20;
     var sp = SPELLS.filter(function(x){ return RUN.spells.indexOf(x.id) < 0; }); RUN.shopSpell = sp.length ? pick(sp) : null; RUN.coupon = true; }
   var items = RUN.shopItems.map(function(it){ return stickerCard(it.s, "buystk", it.price); }).join("");
-  UI.show('<div class="page"><div class="ph"><h2>문구점</h2></div>' + runBar() +
-    '<h3>스티커</h3><div class="stks">' + (items || '<p class="mute">다 팔렸어요</p>') + '</div>' +
+  UI.show('<div class="page"><div class="ph"><h2>상점</h2></div>' + runBar() +
+    '<h3>유물</h3><div class="stks">' + (items || '<p class="mute">다 팔렸어요</p>') + '</div>' +
     '<h3>그 밖</h3><div class="shoplist">' +
-    (RUN.shopSpell ? '<button class="shopit" data-act="buyspell"><b>주문 ' + RUN.shopSpell.id + ' (' + RUN.shopSpell.ko + ')</b><small>' + RUN.shopSpell.d + ' · 잉크 ' + RUN.shopSpell.ink + '</small><i>80G</i></button>' : '') +
+    (RUN.shopSpell ? '<button class="shopit" data-act="buyspell"><b>주문 ' + RUN.shopSpell.id + ' (' + RUN.shopSpell.ko + ')</b><small>' + RUN.shopSpell.d + ' · 마나 ' + RUN.shopSpell.ink + '</small><i>80G</i></button>' : '') +
     (RUN.coupon ? '<button class="shopit" data-act="coupon"><b>레벨업 쿠폰</b><small>고른 타워 Lv +1 (Lv3까지)</small><i>70G</i></button>' : '') +
-    '<button class="shopit" data-act="refresh"><b>수정테이프</b><small>스티커 진열 새로고침</small><i>' + RUN.refresh + 'G</i></button>' +
-    '<button class="shopit" data-act="eraser"><b>지우개</b><small>내 스티커 1개를 떼고 골드 30</small><i>무료</i></button></div>' +
-    '<div class="sticky">' + btn("문구점 나가기", "leaveshop", "pri big") + '</div></div>');
+    '<button class="shopit" data-act="refresh"><b>새로고침</b><small>유물 진열 새로고침</small><i>' + RUN.refresh + 'G</i></button>' +
+    '<button class="shopit" data-act="eraser"><b>유물 판매</b><small>내 유물 1개를 버리고 골드 30</small><i>무료</i></button></div>' +
+    '<div class="sticky">' + btn("상점 나가기", "leaveshop", "pri big") + '</div></div>');
 };
 function spend(c){ if (RUN.gold < c){ UI.toast("골드가 모자라요"); SFX.play("err"); return false; } RUN.gold -= c; SFX.play("gold"); return true; }
-/* ---------- 쉬는 시간 ---------- */
+/* ---------- 이벤트 ---------- */
 UI.event = function(){
   UI.scene = "event"; var ev = pick(EVENTS); RUN.ev = ev;
-  UI.show('<div class="page"><div class="ph"><h2>쉬는 시간</h2></div>' + runBar() + '<div class="evcard"><h3>' + ev.n + '</h3><p>' + ev.d + '</p>' +
+  UI.show('<div class="page"><div class="ph"><h2>이벤트</h2></div>' + runBar() + '<div class="evcard"><h3>' + ev.n + '</h3><p>' + ev.d + '</p>' +
     ev.o.map(function(o, i){ return '<button class="evopt" data-act="evo" data-i="' + i + '"><b>' + o[0] + '</b><small>' + o[1] + '</small></button>'; }).join("") + '</div></div>');
 };
 UI.evo = function(i){
   var ev = RUN.ev, done = function(msg){ if (msg) UI.toast(msg); UI.nextPage(); };
-  if (ev.id === "eraser"){ if (i === 0){ var s = rollStickers(1, false)[0]; if (s) return UI.takeSticker(s.id, function(){ done("스티커 " + s.n + "!"); }); } else { RUN.life += 3; RUN.maxLife = Math.max(RUN.maxLife, RUN.life); } return done(i ? "생명 +3" : ""); }
+  if (ev.id === "eraser"){ if (i === 0){ var s = rollStickers(1, false)[0]; if (s) return UI.takeSticker(s.id, function(){ done("유물 " + s.n + "!"); }); } else { RUN.life += 3; RUN.maxLife = Math.max(RUN.maxLife, RUN.life); } return done(i ? "생명 +3" : ""); }
   if (ev.id === "quiz"){ if (i === 0) return UI.quiz(); return done(); }
   if (ev.id === "lunch"){ if (i === 0){ RUN.life += 5; RUN.maxLife = Math.max(RUN.maxLife, RUN.life); return done("생명 +5"); } RUN.gold += 60; return done("골드 +60"); }
   if (ev.id === "pencase"){ if (i === 0){ var ts = towerList().sort(function(a, b){ return b.spent - a.spent; }); if (ts.length >= 2){ var hi = ts[0], lo = ts[ts.length - 1]; if (hi.lv < 5) hi.lv++; sell(lo); recalcAll(); return done(hi.typed + " Lv" + hi.lv + ", " + lo.typed + " 판매"); } return done("타워가 2기 이상 있어야 해요"); } return done(); }
-  if (ev.id === "nodoodle"){ if (i === 0){ RUN.nextLong = true; RUN.rewardMul = 2; return done("다음 쪽: 적 단어 길이 +2, 보상 ×2"); } return done(); }
-  if (ev.id === "mate"){ if (i === 0){ if (!RUN.stickers.length) return done("줄 스티커가 없어요"); RUN.stickers.splice(Math.floor(Math.random() * RUN.stickers.length), 1); if (Math.random() < 0.5){ var h = pick(stickerPool(2)); if (h){ RUN.stickers.push(h.id); onSticker(h.id); return done("홀로그램 " + h.n + "!"); } } return done("아쉽게도 꽝…"); } return done(); }
+  if (ev.id === "nodoodle"){ if (i === 0){ RUN.nextLong = true; RUN.rewardMul = 2; return done("다음 스테이지: 적 단어 길이 +2, 보상 ×2"); } return done(); }
+  if (ev.id === "mate"){ if (i === 0){ if (!RUN.stickers.length) return done("줄 유물가 없어요"); RUN.stickers.splice(Math.floor(Math.random() * RUN.stickers.length), 1); if (Math.random() < 0.5){ var h = pick(stickerPool(2)); if (h){ RUN.stickers.push(h.id); onSticker(h.id); return done("홀로그램 " + h.n + "!"); } } return done("아쉽게도 꽝…"); } return done(); }
   if (ev.id === "library"){ if (i === 0){ var ws = shuffle(WORDS.filter(function(w){ return !w.u && w.m && w.m >= 1; })).slice(0, 3); ws.forEach(function(w){ RUN.discount[w.w] = 1; SAVE.seen[w.w] = 1; }); return done("이번 판 −50%: " + ws.map(function(w){ return w.w + (w.ko ? "(" + w.ko + ")" : ""); }).join(", ")); } RUN.life += 2; return done("생명 +2"); }
-  if (ev.id === "nap"){ if (i === 0){ RUN.skipWave = true; return done("다음 쪽 웨이브 1개 건너뛰기"); } RUN.gold += 25; return done("골드 +25"); }
+  if (ev.id === "nap"){ if (i === 0){ RUN.skipWave = true; return done("다음 스테이지 웨이브 1개 건너뛰기"); } RUN.gold += 25; return done("골드 +25"); }
   done();
 };
 UI.quiz = function(){
   var got = {}, left = 15, need = 5;
-  UI.modal('<h3>쪽지 시험</h3><p>15초 안에 서로 다른 목록 단어 5개를 입력하세요 (영어 또는 한글).</p><input id="quizin" class="qin" autocomplete="off" autocapitalize="characters" spellcheck="false"><p id="quizs" class="mute"></p>' + btn("포기", "quizend", ""));
+  UI.modal('<h3>단어 시험</h3><p>15초 안에 서로 다른 목록 단어 5개를 입력하세요 (영어 또는 한글).</p><input id="quizin" class="qin" autocomplete="off" autocapitalize="characters" spellcheck="false"><p id="quizs" class="mute"></p>' + btn("포기", "quizend", ""));
   var inp = $("quizin"); inp.focus();
   function upd(){ $("quizs").textContent = "남은 시간 " + left + "초 · " + Object.keys(got).length + "/" + need + " (" + Object.keys(got).join(", ") + ")"; }
   inp.addEventListener("keydown", function(e){ if (e.key !== "Enter") return; var r = lookup(inp.value.trim()); if (r && !got[r.w.w]){ got[r.w.w] = 1; SFX.play("build"); } else SFX.play("err"); inp.value = ""; upd(); if (Object.keys(got).length >= need) fin(true); });
@@ -337,10 +337,10 @@ UI.runEnd = function(win){
   if (win){ stars = 1 + (RUN.life >= RUN.maxLife * 0.5 ? 1 : 0) + (RUN.life >= RUN.maxLife ? 1 : 0); var key = RUN.nb + "_" + RUN.grade; SAVE.stars[key] = Math.max(SAVE.stars[key] || 0, stars); SAVE.clear[RUN.nb] = Math.max(SAVE.clear[RUN.nb] || 0, RUN.grade); }
   save();
   var used = Object.keys(RUN.usedWords);
-  UI.show('<div class="page result">' + (win ? '<div class="stampbig">참 잘했어요<small>' + NOTEBOOKS[RUN.nb].n + ' 클리어</small></div><div class="stars">' + "★★★".slice(0, stars) + '<span>' + "★★★".slice(stars) + '</span></div>' : '<div class="stampbig lose">다시 해 볼까?<small>' + (RUN.page + 1) + '쪽에서 멈춤</small></div>') +
-    '<div class="rstat"><div><span>쓴 단어</span><b>' + used.length + '</b></div><div><span>최고 콤보</span><b>' + Math.max(RUN.maxCombo || 0, B ? B.maxCombo : 0) + '</b></div><div><span>남은 생명</span><b>' + RUN.life + '</b></div><div><span>스티커</span><b>' + RUN.stickers.length + '</b></div></div>' +
+  UI.show('<div class="page result">' + (win ? '<div class="stampbig">CLEAR!<small>' + NOTEBOOKS[RUN.nb].n + ' 클리어</small></div><div class="stars">' + "★★★".slice(0, stars) + '<span>' + "★★★".slice(stars) + '</span></div>' : '<div class="stampbig lose">GAME OVER<small>' + (RUN.page + 1) + '스테이지에서 멈춤</small></div>') +
+    '<div class="rstat"><div><span>쓴 단어</span><b>' + used.length + '</b></div><div><span>최고 콤보</span><b>' + Math.max(RUN.maxCombo || 0, B ? B.maxCombo : 0) + '</b></div><div><span>남은 생명</span><b>' + RUN.life + '</b></div><div><span>유물</span><b>' + RUN.stickers.length + '</b></div></div>' +
     '<p class="mute center">' + used.slice(0, 20).join(" · ") + '</p>' +
-    (win && RUN.grade < 10 ? '<p class="center">등급 ' + (RUN.grade + 1) + '이 열렸어요.' + (RUN.nb < 4 && SAVE.clear[RUN.nb] === 1 ? ' 다음 공책 <b>' + NOTEBOOKS[RUN.nb + 1].n + '</b>도 열렸어요!' : '') + '</p>' : '') +
+    (win && RUN.grade < 10 ? '<p class="center">등급 ' + (RUN.grade + 1) + '이 열렸어요.' + (RUN.nb < 4 && SAVE.clear[RUN.nb] === 1 ? ' 다음 챕터 <b>' + NOTEBOOKS[RUN.nb + 1].n + '</b>도 열렸어요!' : '') + '</p>' : '') +
     '<div class="sticky">' + btn("다시 하기", "setup", "pri big") + btn("처음으로", "title", "") + '</div></div>');
   RUN = null; B = null;
 };
@@ -372,9 +372,9 @@ UI.settings = function(){
     btn("기록 초기화", "reset", "danger"));
   if (UI.scene === "battle" && !UI.paused){ UI.paused = true; UI.pausedByModal = true; }
 };
-UI.pause = function(){ UI.paused = true; UI.modal('<h3>일시정지</h3><div class="menu">' + btn("계속하기", "resume", "pri big") + btn("단어 사전", "dict", "") + btn("설정", "settings", "") + btn("스티커 보기", "stickers", "") + btn("판 포기", "abandon", "danger") + '</div>'); };
-UI.stickers = function(){ var h = RUN && RUN.stickers.length ? RUN.stickers.map(function(id){ var s = STICKERS.filter(function(x){ return x.id === id; })[0]; return stickerCard(s, "none"); }).join("") : '<p class="mute">아직 스티커가 없어요.</p>';
-  UI.modal('<div class="mh"><h3>내 스티커 ' + (RUN ? RUN.stickers.length : 0) + '/8</h3>' + btn("✕", "closemodal", "sq", ' aria-label="닫기"') + '</div><div class="stks">' + h + '</div>' + (RUN ? '<p class="mute">펜: ' + PENS.filter(function(p){ return p.id === RUN.pen; })[0].d + (RUN.erasers ? ' · 지우개 ' + RUN.erasers : '') + (RUN.freeTickets ? ' · 무료 건설권 ' + RUN.freeTickets : '') + '</p>' : '')); };
+UI.pause = function(){ UI.paused = true; UI.modal('<h3>일시정지</h3><div class="menu">' + btn("계속하기", "resume", "pri big") + btn("단어 사전", "dict", "") + btn("설정", "settings", "") + btn("유물 보기", "stickers", "") + btn("판 포기", "abandon", "danger") + '</div>'); };
+UI.stickers = function(){ var h = RUN && RUN.stickers.length ? RUN.stickers.map(function(id){ var s = STICKERS.filter(function(x){ return x.id === id; })[0]; return stickerCard(s, "none"); }).join("") : '<p class="mute">아직 유물가 없어요.</p>';
+  UI.modal('<div class="mh"><h3>내 유물 ' + (RUN ? RUN.stickers.length : 0) + '/8</h3>' + btn("✕", "closemodal", "sq", ' aria-label="닫기"') + '</div><div class="stks">' + h + '</div>' + (RUN ? '<p class="mute">직업: ' + PENS.filter(function(p){ return p.id === RUN.pen; })[0].d + (RUN.erasers ? ' · 환불권 ' + RUN.erasers : '') + (RUN.freeTickets ? ' · 무료 건설권 ' + RUN.freeTickets : '') + '</p>' : '')); };
 
 /* ================= 이벤트 연결 ================= */
 document.addEventListener("click", function(e){
@@ -388,12 +388,12 @@ document.addEventListener("click", function(e){
     case "begin": UI.begin(); break; case "go": UI.go(+d.j); break;
     case "takestk": UI.takeSticker(d.id); break; case "takegold": RUN.gold += UI.rewardGold || 40; SFX.play("gold"); UI.nextPage(); break;
     case "replstk": var p = UI.pendingStk; RUN.stickers.splice(RUN.stickers.indexOf(d.id), 1); UI.closeModal(); RUN.stickers.push(p.id); onSticker(p.id); (p.after || UI.nextPage)(); break;
-    case "buystk": var it = RUN.shopItems.filter(function(x){ return x.s.id === d.id; })[0]; if (it && RUN.stickers.length >= 8){ UI.toast("스티커 칸이 가득 찼어요. 지우개로 먼저 떼세요."); break; } if (it && spend(it.price)){ RUN.stickers.push(it.s.id); onSticker(it.s.id); RUN.shopItems.splice(RUN.shopItems.indexOf(it), 1); UI.shop(false); } break;
+    case "buystk": var it = RUN.shopItems.filter(function(x){ return x.s.id === d.id; })[0]; if (it && RUN.stickers.length >= 8){ UI.toast("유물 칸이 가득 찼어요. 유물 판매로 먼저 파세요."); break; } if (it && spend(it.price)){ RUN.stickers.push(it.s.id); onSticker(it.s.id); RUN.shopItems.splice(RUN.shopItems.indexOf(it), 1); UI.shop(false); } break;
     case "buyspell": if (spend(80)){ RUN.spells.push(RUN.shopSpell.id); RUN.shopSpell = null; UI.shop(false); } break;
     case "coupon": var ts = towerList().filter(function(t){ return t.lv < 3; }); if (!ts.length){ UI.toast("Lv3 미만 타워가 없어요"); break; } UI.modal('<h3>레벨업 쿠폰 (70G)</h3><div class="dlist">' + ts.map(function(t){ return '<button class="dw" data-act="usecoupon" data-k="' + t.x + "," + t.y + '">' + sprImg(t.w, 2) + '<span><b>' + t.typed + '</b> Lv' + t.lv + ' → Lv' + (t.lv + 1) + '</span></button>'; }).join("") + '</div>' + btn("취소", "closemodal", "")); break;
     case "usecoupon": if (spend(70)){ var t = B.towers[d.k]; t.lv++; recalcAll(); RUN.coupon = false; UI.closeModal(); UI.toast(t.typed + " Lv" + t.lv); UI.shop(false); } break;
     case "refresh": if (spend(RUN.refresh)){ RUN.refresh += 10; RUN.shopItems = rollStickers(2, false).map(function(s){ return {s:s, price:[60, 100, 150][s.r]}; }); UI.shop(false); } break;
-    case "eraser": if (!RUN.stickers.length){ UI.toast("뗄 스티커가 없어요"); break; } UI.modal('<h3>지우개: 뗄 스티커 (골드 +30)</h3><div class="stks">' + RUN.stickers.map(function(x){ return stickerCard(STICKERS.filter(function(y){ return y.id === x; })[0], "erasestk"); }).join("") + '</div>' + btn("취소", "closemodal", "")); break;
+    case "eraser": if (!RUN.stickers.length){ UI.toast("버릴 유물가 없어요"); break; } UI.modal('<h3>유물 판매: 버릴 유물 (골드 +30)</h3><div class="stks">' + RUN.stickers.map(function(x){ return stickerCard(STICKERS.filter(function(y){ return y.id === x; })[0], "erasestk"); }).join("") + '</div>' + btn("취소", "closemodal", "")); break;
     case "erasestk": RUN.stickers.splice(RUN.stickers.indexOf(d.id), 1); RUN.gold += 30; if (d.id === "wall"){ RUN.maxLife -= 5; RUN.life = Math.max(1, RUN.life - 5); } UI.closeModal(); UI.shop(false); break;
     case "leaveshop": UI.nextPage(); break; case "evo": UI.evo(+d.i); break; case "quizend": UI.quizFin && UI.quizFin(false); break;
     case "abandon": UI.closeModal(); if (confirm("이 판을 포기할까요?")){ if (B) B.over = true; UI.runEnd(false); } break;

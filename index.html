@@ -8,8 +8,8 @@
 <meta name="description" content="영단어를 치면 그 단어가 타워가 되는 픽셀 타워 디펜스">
 <title>WORD TD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;500;700;900&family=Silkscreen:wght@400;700&display=swap">
-<link rel="stylesheet" href="style.css?v=mwyxdwkf">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="style.css?v=mwyxpyhw">
 <script>(function(){var b=function(e){e.preventDefault();return false;};document.addEventListener("contextmenu",b);document.addEventListener("dragstart",function(e){if(e.target&&e.target.tagName==="IMG")e.preventDefault();});
 document.addEventListener("keydown",function(e){var k=(e.key||"").toUpperCase();if(k==="F12"||(e.ctrlKey||e.metaKey)&&e.shiftKey&&["I","J","C","K"].indexOf(k)>=0||(e.ctrlKey||e.metaKey)&&["U","S","P"].indexOf(k)>=0||e.metaKey&&e.altKey&&["I","J","C","U"].indexOf(k)>=0){e.preventDefault();e.stopPropagation();return false;}},true);})();</script>
 </head>
@@ -19,7 +19,7 @@ document.addEventListener("keydown",function(e){var k=(e.key||"").toUpperCase();
   <div class="hud">
     <span class="v hp" aria-label="생명"><svg width="16" height="16" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 1h2v1h2V1h2v1h1v2H7v1H6v1H5v1H3V6H2V5H1V4H0V2h1z" fill="#FF5A6E"/></svg><span id="hp">20</span></span>
     <span class="v gd" aria-label="골드"><svg width="16" height="16" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="M2 0h4v1h1v1h1v4H7v1H6v1H2V7H1V6H0V2h1V1h1z" fill="#FFD34D"/><path d="M3 2h2v1H4v2h1v1H3V5h1V3H3z" fill="#b8860b"/></svg><span id="gold">100</span></span>
-    <div class="mid"><b id="pagel">1 / 7쪽</b><div class="bar"><i id="pageb" style="width:0"></i></div><small id="wavel">준비</small></div>
+    <div class="mid"><b id="pagel">스테이지 1/7</b><div class="bar"><i id="pageb" style="width:0"></i></div><small id="wavel">준비</small></div>
     <button class="hb wv" id="wavebtn" data-act="wave">시작 ▶</button>
     <button class="hb" id="speedbtn" data-act="speed" aria-label="속도">×1</button>
     <button class="hb" data-act="pause" aria-label="일시정지"><svg width="12" height="12" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 1h2v6H1zM5 1h2v6H5z" fill="#E8EAF3"/></svg></button>
@@ -42,6 +42,6 @@ document.addEventListener("keydown",function(e){var k=(e.key||"").toUpperCase();
 </div>
 <div id="modal" hidden><div id="modalbox" role="dialog" aria-modal="true"></div></div>
 <div id="toast" hidden></div><div id="banner"></div><div id="flash"></div>
-<script src="game.js?v=mwyxdwkf"></script>
+<script src="game.js?v=mwyxpyhw"></script>
 </body>
 </html>

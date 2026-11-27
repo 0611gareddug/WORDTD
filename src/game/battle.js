@@ -150,10 +150,10 @@ function kill(e, src){
   for (var i = 0; i < 8; i++) B.fx.push({k:"crumb", x:p[0], y:p[1], vx:(Math.random() - 0.5) * 3, vy:-Math.random() * 2.5, t:0.6, T:0.6, c:i % 2 ? "#f2c4d0" : "#e8eaf3"});
   SFX.play("kill");
   if (e.type === "splitter" && !e.small){ for (var j = 0; j < 2; j++) spawnChild(e, j); }
-  if (e.type === "mimic"){ var w = pick(WORDS.filter(function(x){ return !SAVE.seen[x.w] && !x.u; })) || pick(WORDS); SAVE.seen[w.w] = 1; floatText("새 단어: " + w.w + (w.ko ? " (" + w.ko + ")" : ""), p[0], p[1] - 0.6, "#8FD8FF", 2.2); UI.toast("필통 미믹이 단어를 떨어뜨렸다: " + w.w + (w.ko ? " · " + w.ko : "")); }
-  if (e.boss){ B.boss = null; SFX.play("stamp"); B.shake = 0.6; floatText("참 잘했어요!", p[0], p[1], "#E0483E", 2); }
+  if (e.type === "mimic"){ var w = pick(WORDS.filter(function(x){ return !SAVE.seen[x.w] && !x.u; })) || pick(WORDS); SAVE.seen[w.w] = 1; floatText("새 단어: " + w.w + (w.ko ? " (" + w.ko + ")" : ""), p[0], p[1] - 0.6, "#8FD8FF", 2.2); UI.toast("미믹이 단어를 떨어뜨렸다: " + w.w + (w.ko ? " · " + w.ko : "")); }
+  if (e.boss){ B.boss = null; SFX.play("stamp"); B.shake = 0.6; floatText("보스 격파!", p[0], p[1], "#FFD34D", 2); }
 }
-function spawnChild(e, j){ var hp = ENEMY.blob.hp * hpScale() * 0.5; var c = {type:"blob", n:"작은 잉크 방울", hp:hp, max:hp, sp:1.2, ar:0, mr:0, col:"#3b3f4e", gold:1, fly:false, size:0.6, small:true, d:Math.max(0, e.d - 0.3 * j), st:{}, id:++B.eid, hitT:0, shieldHp:0};
+function spawnChild(e, j){ var hp = ENEMY.blob.hp * hpScale() * 0.5; var c = {type:"blob", n:"작은 블롭", hp:hp, max:hp, sp:1.2, ar:0, mr:0, col:"#3b3f4e", gold:1, fly:false, size:0.6, small:true, d:Math.max(0, e.d - 0.3 * j), st:{}, id:++B.eid, hitT:0, shieldHp:0};
   var ew = enemyWord(3); c.word = ew.s; c.wobj = ew.w; B.enemies.push(c); }
 function addGold(g, p){ RUN.gold += g; if (p && g > 0){ B.nums.push({x:p[0], y:p[1] - 0.6, v:"+" + g, t:0.8, gold:true}); } }
 function floatText(s, x, y, c, t){ B.texts.push({s:s, x:x, y:y, c:c || "#fff", t:t || 1.2, T:t || 1.2}); }
@@ -302,7 +302,7 @@ function waveDone(){
 function pageClear(){
   B.traps = []; B.shots = [];
   if (has("interest")){ var it = Math.min(50, Math.round(RUN.gold * 0.05)); if (it) addGold(it, null), UI.toast("이자 +" + it + "G"); }
-  if (has("perfect") && !B.miss){ addGold(60, null); RUN.perfectNext = true; UI.toast("만점 시험지: 골드 +60, 다음 쪽 콤보 10부터"); }
+  if (has("perfect") && !B.miss){ addGold(60, null); RUN.perfectNext = true; UI.toast("완벽주의: 골드 +60, 다음 스테이지 콤보 10부터"); }
   RUN.maxCombo = Math.max(RUN.maxCombo || 0, B.maxCombo);
   SFX.play("stamp"); B.shake = 0.3;
   setTimeout(function(){ UI.pageCleared(); }, 900);
@@ -319,15 +319,15 @@ function costFor(res, tile){
   else if (has("pedestal")){ c *= 0.75; notes.push("받침대 −25%"); }
   if (rule("short") && L <= 4){ c *= 0.7; notes.push("짧게 −30%"); }
   if (rule("fresh") && !RUN.usedWords[w.w]){ c *= 0.6; notes.push("새 학기 −40%"); }
-  if (penIs("fountain") && L <= 4){ c *= 1.2; notes.push("만년필 +20%"); }
-  if (penIs("crayon") && w.k === "support"){ c *= 0.7; notes.push("크레파스 −30%"); }
+  if (penIs("fountain") && L <= 4){ c *= 1.2; notes.push("학자 +20%"); }
+  if (penIs("crayon") && w.k === "support"){ c *= 0.7; notes.push("상인 −30%"); }
   if (has("card") && RUN.seenEnemy[w.w] && !RUN.cardUsed[w.w]){ c *= 0.5; notes.push("단어 카드 −50%"); }
   if (has("chainw") && B.lastBuilt && typed[0] === B.lastBuilt[B.lastBuilt.length - 1]){ c *= 0.85; notes.push("끝말잇기 −15%"); }
   if (has("dict2") && w.L){ c *= 0.7; notes.push("전설 −30%"); }
-  if (RUN.discount && RUN.discount[w.w]){ c *= 0.5; notes.push("도서실 −50%"); }
+  if (RUN.discount && RUN.discount[w.w]){ c *= 0.5; notes.push("서고 −50%"); }
   c = Math.round(c);
   if (RUN.freeTickets > 0 && !merge){ notes.push("무료 건설권"); c = 0; }
-  else if (B.freeBlank > 0 && L <= 6 && !merge){ notes.push("백지 무료"); c = 0; }
+  else if (B.freeBlank > 0 && L <= 6 && !merge){ notes.push("설계도 무료"); c = 0; }
   return {c:c, notes:notes, merge:merge};
 }
 function build(res, tile){
@@ -336,7 +336,7 @@ function build(res, tile){
   if (ex && ex.lv >= 5) return {err:"이미 Lv5입니다."};
   if (RUN.gold < cst.c) return {err:"골드가 모자라요 (" + cst.c + "G 필요)"};
   RUN.gold -= cst.c;
-  if (cst.notes.indexOf("무료 건설권") >= 0) RUN.freeTickets--; else if (cst.notes.indexOf("백지 무료") >= 0) B.freeBlank--;
+  if (cst.notes.indexOf("무료 건설권") >= 0) RUN.freeTickets--; else if (cst.notes.indexOf("설계도 무료") >= 0) B.freeBlank--;
   if (has("card") && RUN.seenEnemy[res.w.w]) RUN.cardUsed[res.w.w] = 1;
   var typed = res.ko ? res.w.w : res.typed;
   if (ex){ ex.lv++; ex.spent += cst.c; if (typed.length > ex.typed.length && WMAP[res.w.w]) ex.typed = typed; floatText("Lv" + ex.lv + "!", ex.x + 0.5, ex.y, "#FFD34D"); }
@@ -380,8 +380,8 @@ function strike(s){
 }
 function spellOf(s){ var up = s.toUpperCase(); return SPELLS.filter(function(sp){ return RUN.spells.indexOf(sp.id) >= 0 && (sp.id === up || sp.ko === s); })[0]; }
 function castSpell(sp){
-  if (rule("quiet")) return {err:"조용히! 이번 쪽은 주문을 쓸 수 없어요."};
-  if (B.ink < sp.ink) return {err:"잉크가 모자라요 (" + sp.ink + " 필요)"};
+  if (rule("quiet")) return {err:"조용히! 이번 스테이지는 주문을 쓸 수 없어요."};
+  if (B.ink < sp.ink) return {err:"마나가 모자라요 (" + sp.ink + " 필요)"};
   B.ink -= sp.ink; var dur = has("double") ? 1.5 : 1; SFX.play("spell"); comboUp();
   if (sp.id === "STOP"){ B.spellT.STOP = 2 * dur; B.enemies.forEach(function(e){ if (e.boss) e.hitStop = 1 * dur; }); B.spellT.STOP = B.boss ? Math.min(B.spellT.STOP, 2 * dur) : B.spellT.STOP; }
   if (sp.id === "RUSH") B.spellT.RUSH = 5 * dur;

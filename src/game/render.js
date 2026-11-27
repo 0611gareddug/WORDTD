@@ -1,4 +1,4 @@
-/* WORD TD 그리기: 공책 맵 + 스티커 타워 + 낙서 적 */
+/* WORD TD 그리기: 회색 타일 맵 + 픽셀 타워 + 적 */
 var R = {cv:null, ctx:null, bg:null, ts:32, ox:0, oy:0, w:0, h:0, dpr:1, spr:{}};
 function rInit(cv){ R.cv = cv; R.ctx = cv.getContext("2d"); }
 function rResize(){
@@ -10,36 +10,36 @@ function rResize(){
 }
 function nbBg(){
   var c = document.createElement("canvas"), ts = R.ts, d = R.dpr; c.width = R.w * d; c.height = R.h * d; var x = c.getContext("2d"); x.scale(d, d);
-  x.fillStyle = "#FBF6EA"; x.fillRect(0, 0, R.w, R.h);
-  x.fillStyle = "#DCE8F3"; var g = ts / 2; for (var i = 0; i <= R.w; i += g) x.fillRect(Math.round(i), 0, 1, R.h); for (var j = 0; j <= R.h; j += g) x.fillRect(0, Math.round(j), R.w, 1);
-  x.fillStyle = "#c9d9ea"; for (i = 0; i <= R.w; i += ts) x.fillRect(Math.round(i), 0, 1, R.h); for (j = 0; j <= R.h; j += ts) x.fillRect(0, Math.round(j), R.w, 1);
-  x.fillStyle = "#E9A3A3"; x.fillRect(Math.round(ts * 0.12), 0, 2, R.h);
-  var nb = NOTEBOOKS[B.nb]; x.fillStyle = nb.hl;
-  B.cells.forEach(function(c2){ x.fillRect(c2[0] * ts + 1, c2[1] * ts + 1, ts - 1, ts - 1); });
-  /* 형광펜 결 */
-  x.fillStyle = "rgba(255,255,255,0.18)"; B.cells.forEach(function(c2){ x.fillRect(c2[0] * ts + 1, c2[1] * ts + ts * 0.62, ts - 1, 2); });
-  var s = B.start, e = B.end;
-  x.fillStyle = "#3B3F4E"; x.beginPath(); x.ellipse(s[0] * ts, s[1] * ts, ts * 0.32, ts * 0.28, 0, 0, 7); x.fill(); x.fillStyle = "#8C909B"; x.beginPath(); x.ellipse(s[0] * ts, s[1] * ts, ts * 0.18, ts * 0.15, 0, 0, 7); x.fill();
-  x.fillStyle = "#E0483E"; var bx = e[0] * ts - ts * 0.18, by = e[1] * ts - ts * 0.45; x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + ts * 0.36, by); x.lineTo(bx + ts * 0.36, by + ts * 0.9); x.lineTo(bx + ts * 0.18, by + ts * 0.72); x.lineTo(bx, by + ts * 0.9); x.closePath(); x.fill();
+  var nb = NOTEBOOKS[B.nb], t1 = nb.tile[0], t2 = nb.tile[1];
+  for (var y = 0; y < ROWS; y++) for (var xx = 0; xx < COLS; xx++){ x.fillStyle = (xx + y) % 2 ? t1 : t2; x.fillRect(xx * ts, y * ts, ts, ts); }
+  x.fillStyle = "rgba(255,255,255,0.18)"; for (y = 0; y < ROWS; y++) for (xx = 0; xx < COLS; xx++) x.fillRect(xx * ts, y * ts, ts, 1);
+  /* 길: 어두운 회색 돌길 */
+  B.cells.forEach(function(c2){ var px = c2[0] * ts, py = c2[1] * ts; x.fillStyle = nb.path; x.fillRect(px, py, ts, ts); x.fillStyle = "rgba(0,0,0,0.10)"; x.fillRect(px, py + ts - 2, ts, 2); x.fillStyle = "rgba(255,255,255,0.08)"; x.fillRect(px + 3, py + 3, ts * 0.3, 2); x.fillRect(px + ts * 0.55, py + ts * 0.6, ts * 0.25, 2); });
+  /* 길 가장자리 */
+  x.fillStyle = "rgba(29,32,41,0.18)"; B.cells.forEach(function(c2){ [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(o){ if (!B.pathSet[(c2[0]+o[0]) + "," + (c2[1]+o[1])]){ var px = c2[0] * ts, py = c2[1] * ts; if (o[0] === 1) x.fillRect(px + ts - 2, py, 2, ts); if (o[0] === -1) x.fillRect(px, py, 2, ts); if (o[1] === 1) x.fillRect(px, py + ts - 2, ts, 2); if (o[1] === -1) x.fillRect(px, py, ts, 2); } }); });
+  var s = B.start, e = B.end, u = ts / 8;
+  /* 입구: 보라 차원문 */
+  x.fillStyle = "#3c3150"; x.fillRect(s[0] * ts - u * 3, s[1] * ts - u * 3.5, u * 6, u * 7); x.fillStyle = "#a77bff"; x.fillRect(s[0] * ts - u * 2, s[1] * ts - u * 2.5, u * 4, u * 5); x.fillStyle = "#ece2ff"; x.fillRect(s[0] * ts - u, s[1] * ts - u * 1.5, u * 2, u * 3);
+  /* 기지: 픽셀 성 */
+  var bx = e[0] * ts, by = e[1] * ts; x.fillStyle = "#555a68"; x.fillRect(bx - u * 3, by - u * 2, u * 6, u * 5); x.fillStyle = "#8c909b"; x.fillRect(bx - u * 3, by - u * 3, u, u); x.fillRect(bx - u, by - u * 3, u * 2, u); x.fillRect(bx + u * 2, by - u * 3, u, u); x.fillStyle = "#e8eaf3"; x.fillRect(bx - u * 3, by - u * 2, u * 6, u * 0.6); x.fillStyle = "#1d2029"; x.fillRect(bx - u, by, u * 2, u * 3); x.fillStyle = "#e8504a"; x.fillRect(bx - u * 0.5, by - u * 5, u * 2, u); x.fillStyle = "#e8eaf3"; x.fillRect(bx - u * 0.5, by - u * 5, u * 0.4, u * 2.4);
   R.bg = c;
 }
 function sprite(t){
   var key = t.w.w + "|" + t.lv + "|" + R.ts, s = R.spr[key]; if (s) return s;
   var g = TG.get(t.w.w, t.w.k, t.w.L), sz = Math.max(16, Math.round(R.ts * 0.78)), sc = sz / 16, pad = 2, c = document.createElement("canvas"), d = R.dpr;
   c.width = (sz + pad * 2) * d; c.height = (sz + pad * 2 + 1) * d; var x = c.getContext("2d"); x.scale(d, d); x.imageSmoothingEnabled = false;
-  var ring = t.lv >= 5 ? null : t.lv >= 4 ? "#d6dbe4" : "#ffffff";
-  if (t.lv >= 5){ var gr = x.createLinearGradient(0, 0, sz + 4, sz + 4); gr.addColorStop(0, "#ffd1ec"); gr.addColorStop(0.35, "#c8f0ff"); gr.addColorStop(0.65, "#fff3b0"); gr.addColorStop(1, "#d4ffe0"); x.fillStyle = gr; } else x.fillStyle = ring;
-  x.fillStyle = x.fillStyle; x.shadowColor = "rgba(42,45,58,0.35)"; x.shadowOffsetY = 1.5; x.fillRect(0, 0, sz + pad * 2, sz + pad * 2); x.shadowColor = "transparent";
+  if (t.lv >= 4){ x.fillStyle = t.lv >= 5 ? "rgba(255,211,77,0.55)" : "rgba(201,210,222,0.55)"; x.fillRect(0, 0, sz + pad * 2, sz + pad * 2); }
+  x.fillStyle = "rgba(0,0,0,0.22)"; x.fillRect(pad + sz * 0.15, pad + sz - 1, sz * 0.7, 2);
   for (var i = 0; i < 256; i++) if (g[i]){ x.fillStyle = g[i]; x.fillRect(pad + (i % 16) * sc, pad + Math.floor(i / 16) * sc, Math.ceil(sc), Math.ceil(sc)); }
   R.spr[key] = c; return c;
 }
 var FONT_W = "'Silkscreen', monospace", FONT_K = "'Noto Sans KR', sans-serif";
-function tape(x, s, cx, cy, size, typedPrefix, ko, bg){
+function tape(x, s, cx, cy, size, typedPrefix, ko, bg, line){
   x.font = "700 " + size + "px " + (ko ? FONT_K : FONT_W); var w = x.measureText(s).width + size * 0.7, h = size * 1.35;
-  x.fillStyle = bg || "#F2D7A6"; x.fillRect(cx - w / 2, cy - h / 2, w, h); x.fillStyle = "rgba(59,63,78,0.25)"; x.fillRect(cx - w / 2, cy + h / 2, w, 1);
+  x.fillStyle = bg || "rgba(29,32,41,0.88)"; x.fillRect(cx - w / 2, cy - h / 2, w, h); if (line){ x.fillStyle = line; x.fillRect(cx - w / 2, cy + h / 2 - 2, w, 2); }
   x.textBaseline = "middle"; x.textAlign = "left"; var tx = cx - w / 2 + size * 0.35;
-  if (typedPrefix){ x.fillStyle = "#E0483E"; x.fillText(typedPrefix, tx, cy + 0.5); tx += x.measureText(typedPrefix).width; s = s.slice(typedPrefix.length); }
-  x.fillStyle = "#2A2D3A"; x.fillText(s, tx, cy + 0.5);
+  if (typedPrefix){ x.fillStyle = "#FFD34D"; x.fillText(typedPrefix, tx, cy + 0.5); tx += x.measureText(typedPrefix).width; s = s.slice(typedPrefix.length); }
+  x.fillStyle = "#ffffff"; x.fillText(s, tx, cy + 0.5);
 }
 function drawEnemy(x, e, px, py, ts){
   var s = ts * e.size, wob = Math.floor(B.t * 4 + e.id) % 2 ? 0.6 : -0.6, flash = e.hitT > 0;
@@ -91,7 +91,7 @@ function draw(){
     if (t.frozen > 0){ x.fillStyle = "rgba(143,216,255,0.35)"; x.fillRect(t.x * ts + 2, t.y * ts + 2, ts - 4, ts - 4); }
     var lab = t.sealed > 0 ? "???" : (UI.lang() === "ko" && t.w.ko && SAVE.settings.koPlate ? t.w.ko : t.typed);
     var fs = Math.max(6, Math.min(ts * 0.22, ts * 1.25 / Math.max(3, lab.length) * 1.4));
-    tape(x, lab, t.x * ts + ts / 2, t.y * ts + ts * 0.9, fs, "", Hangul.isKo(lab));
+    tape(x, lab, t.x * ts + ts / 2, t.y * ts + ts * 0.9, fs, "", Hangul.isKo(lab), null, EL[t.w.k].m);
     for (var i = 0; i < t.lv; i++){ x.fillStyle = "#2A2D3A"; x.fillRect(t.x * ts + ts - 5 - i * 4, t.y * ts + 2, 3, 3); x.fillStyle = "#FFD34D"; x.fillRect(t.x * ts + ts - 4.5 - i * 4, t.y * ts + 2.5, 2, 2); }
     if (t.res){ x.fillStyle = EL[t.w.k].m; x.fillRect(t.x * ts + 2, t.y * ts + 2, 3, 3); }
   });
@@ -100,7 +100,7 @@ function draw(){
   var es = B.enemies.filter(function(e){ return !e.dead; }).sort(function(a, b){ return a.d - b.d; });
   es.forEach(function(e){ var p = ePos(e); drawEnemy(x, e, p[0] * ts, p[1] * ts, ts); });
   es.forEach(function(e){ if (!e.word || e.burrowed) return; var p = ePos(e), ko = Hangul.isKo(e.word), pre = up && e.word.indexOf(up) === 0 ? up : "";
-    var fs = Math.max(8, Math.round(ts * (e.boss ? 0.3 : 0.24))); tape(x, e.word, p[0] * ts, p[1] * ts + (e.id % 2 && !e.boss ? ts * e.size * 0.5 + fs * 0.9 : -ts * e.size * 0.55 - fs * 1.1), fs, pre, ko, e.boss ? "#FFE86B" : e.elite ? "#ffd1dc" : null); });
+    var fs = Math.max(8, Math.round(ts * (e.boss ? 0.3 : 0.24))); tape(x, e.word, p[0] * ts, p[1] * ts + (e.id % 2 && !e.boss ? ts * e.size * 0.5 + fs * 0.9 : -ts * e.size * 0.55 - fs * 1.1), fs, pre, ko, e.boss ? "rgba(74,42,122,0.92)" : e.elite ? "rgba(120,30,50,0.9)" : null, e.boss ? "#a77bff" : null); });
   /* 탄환 */
   B.shots.forEach(function(s){ if (s.delay > 0) return; var z = s.sz + 1; x.fillStyle = s.c; x.fillRect(s.x * ts - z / 2 - 0.5, s.y * ts - z / 2 - 0.5, z + 1, z + 1); x.fillStyle = s.l; x.fillRect(s.x * ts - z / 2, s.y * ts - z / 2, z, z); });
   /* 효과 */
@@ -117,8 +117,8 @@ function draw(){
   /* 숫자 */
   x.textAlign = "center"; x.textBaseline = "middle";
   B.nums.forEach(function(n){ var fs = Math.max(9, ts * (n.big ? 0.42 : n.cr ? 0.36 : 0.27)); x.font = "700 " + fs + "px " + FONT_W; x.globalAlpha = Math.min(1, n.t * 2);
-    x.fillStyle = "#FBF6EA"; x.fillText(n.v, n.x * ts + 1, n.y * ts + 1); x.fillStyle = n.gold ? "#c9961a" : "#E0483E"; x.fillText(n.v, n.x * ts, n.y * ts);
-    if (n.cr){ x.strokeStyle = "#E0483E"; x.lineWidth = 1.5; x.beginPath(); x.ellipse(n.x * ts, n.y * ts, fs * 1.2, fs * 0.7, -0.15, 0, 7); x.stroke(); } x.globalAlpha = 1; });
+    x.fillStyle = "#1d2029"; x.fillText(n.v, n.x * ts + 1, n.y * ts + 1); x.fillStyle = n.gold ? "#FFD34D" : n.cr ? "#ff6b8a" : "#ffffff"; x.fillText(n.v, n.x * ts, n.y * ts);
+     x.globalAlpha = 1; });
   B.texts.forEach(function(n){ var fs = Math.max(10, ts * 0.32); x.font = "700 " + fs + "px " + FONT_K; x.globalAlpha = Math.min(1, n.t / n.T * 2); x.lineWidth = 3; x.strokeStyle = "#2A2D3A"; x.strokeText(n.s, n.x * ts, n.y * ts); x.fillStyle = n.c; x.fillText(n.s, n.x * ts, n.y * ts); x.globalAlpha = 1; });
   if (B.spellT.STOP > 0){ x.fillStyle = "rgba(143,216,255,0.12)"; x.fillRect(0, 0, R.w, R.h); }
 }
