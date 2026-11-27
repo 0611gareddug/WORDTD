@@ -1,0 +1,7 @@
+{
+  "name": "word-td",
+  "private": true,
+  "description": "WORD TD - 단어가 타워가 되는 타워 디펜스",
+  "scripts": { "build": "node tools/build.js" },
+  "devDependencies": { "javascript-obfuscator": "4.1.1" }
+}
