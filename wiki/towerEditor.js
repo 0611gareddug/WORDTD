@@ -30,7 +30,7 @@ function teBase(word){ var P = pts(word), L = word.length, V = (word.match(/[AEI
 var TE_MODE_D = {single:"적 1마리를 쏜다. 가장 기본적인 형태.",pierce:"일직선으로 날아가 최대 3마리를 꿰뚫는다. 줄 선 적에게 강하다.",aoe:"맞은 지점 반경 안의 적 모두에게 피해. 무리에 강하다.",rapid:"공격 간격이 절반, 대신 한 발 피해 45%. 적중 효과가 자주 터진다.",beam:"끊기지 않는 광선. 같은 적을 오래 맞출수록 유리하다.",trap:"길 위에 함정을 깔아 밟으면 터진다. 길 가까이 지어야 한다.",aura:"직접 공격하지 않는다. 주변 강화, 골드, 회복 같은 지원 효과만 쓴다."};
 function teBaseAtk(t){ return teBase(t.word && t.word.length >= 3 ? t.word : "TOWER").atk; }
 function teSetMult(t, m){ t.mult = +m.toFixed(2); t.dmg = +(teBaseAtk(t) * t.mult).toFixed(1); }
-function teCost(t){ return Math.round((10 + pts(t.word) * 4) * t.mult); }
+function teCost(t){ return Math.round((10 + pts(t.word) * 4) * t.mult * (+t.price > 0 ? +t.price : 1)); }
 function tePower(t){
   var b = teBase(t.word), atk = t.dmg != null ? t.dmg : b.atk * t.mult, f = t.fx, mode = t.mode;
   var mf = mode === "aoe" ? 1 + 2.5 * t.radius * 0.6 : (TE_MODES.filter(function(m){ return m[0] === mode; })[0] || [0,0,1])[2];
@@ -41,32 +41,52 @@ function tePower(t){
   return {dps: dps, util: util, sup: sup, total: dps * (1 + util) + sup};
 }
 function teRatio(t){ return tePower(t).total / Math.max(1, teCost(t)); }
-function teBalance(t){
-  var before = JSON.parse(JSON.stringify(t)), cur = JSON.parse(JSON.stringify(t));
-  function ok(x){ var r = teRatio(x); return r >= 0.92 && r <= 1.08; }
+/* 밸런스 자동 조정: 고정하지 않은 항목만 조금씩 나눠서 움직여 전투력 ÷ 비용을 1.0 근처로 맞춘다 */
+var TE_LOCKS = [["interval","공격 간격"],["fx","효과"],["radius","범위 반경"],["range","사거리"]];
+function teBalance(t, how){
   function clone(x){ return JSON.parse(JSON.stringify(x)); }
-  if (cur.mode === "aura"){
-    var best = cur; for (var m = 0.4; m <= 2.501; m += 0.05){ var c = clone(cur); teSetMult(c, m); if (Math.abs(Math.log(teRatio(c))) < Math.abs(Math.log(teRatio(best)))) best = c; } cur = best;
-  } else if (!ok(cur)){
-    var lo = 0.2, hi = 3.5;
-    for (var k = 0; k < 40; k++){ var mid = (lo + hi) / 2, c1 = clone(cur); c1.interval = mid; if (teRatio(c1) > 1) lo = mid; else hi = mid; }
-    cur.interval = Math.round(((lo + hi) / 2) / 0.05) * 0.05; cur.interval = +Math.min(3.5, Math.max(0.2, cur.interval)).toFixed(2);
+  var before = clone(t), cur = clone(t), lock = t.lock || {}, note = "";
+  if (!(+cur.price > 0)) cur.price = 1;
+  if (how === "price"){
+    var p = tePower(cur).total / Math.max(1, (10 + pts(cur.word) * 4) * cur.mult);
+    cur.price = +Math.min(10, Math.max(0.3, Math.round(p * 20) / 20)).toFixed(2);
+    if (p > 10 || p < 0.3) note = "가격 배율 한도(0.3~10)에 걸려 완전히 맞추지 못했다.";
+    return {before: before, after: cur, note: note};
   }
-  if (!ok(cur)){
-    var keys = Object.keys(cur.fx).filter(function(k){ return cur.fx[k] > 0; });
-    if (keys.length){ var a = 0.1, b = 3, base = clone(cur), cand = cur;
-      for (var it = 0; it < 30; it++){ var md = (a + b) / 2, c2 = clone(base); keys.forEach(function(k){ var d = TE_FX.filter(function(x){ return x[0] === k; })[0]; c2.fx[k] = +Math.min(d[4], Math.max(d[5], Math.round(base.fx[k] * md / d[5]) * d[5])).toFixed(2); }); if (teRatio(c2) > 1) b = md; else a = md; cand = c2; }
-      cur = cand; }
+  var fxKeys = Object.keys(cur.fx || {}).filter(function(k){ return cur.fx[k] > 0 && ["buff","gold","heal"].indexOf(k) < 0; });
+  var levers = [];
+  if (cur.mode !== "aura" && !lock.interval) levers.push("interval");
+  if (!lock.fx && fxKeys.length) levers.push("fx");
+  if (cur.mode === "aoe" && !lock.radius) levers.push("radius");
+  if (cur.mode !== "aura" && !lock.range) levers.push("range");
+  if (cur.mode === "aura") levers.push("support");
+  var fx0 = clone(cur.fx || {});
+  for (var it = 0; it < 80 && levers.length; it++){
+    var r = teRatio(cur); if (r > 0.97 && r < 1.03) break;
+    var g = Math.pow(1 / r, 0.5 / levers.length);
+    levers.forEach(function(L){
+      if (L === "interval") cur.interval = Math.min(6, Math.max(0.15, cur.interval / g));
+      if (L === "radius") cur.radius = Math.min(3, Math.max(0.3, ((1 + 1.5 * cur.radius) * g - 1) / 1.5));
+      if (L === "range") cur.range = Math.min(5, Math.max(1.5, cur.range * g));
+      if (L === "fx") fxKeys.forEach(function(k){ var d = TE_FX.filter(function(x){ return x[0] === k; })[0]; cur.fx[k] = Math.min(d[4], Math.max(d[5], cur.fx[k] * g)); });
+      if (L === "support") ["buff","gold","heal"].forEach(function(k){ if (cur.fx[k] > 0){ var d = TE_FX.filter(function(x){ return x[0] === k; })[0]; cur.fx[k] = Math.min(d[4], Math.max(d[5], cur.fx[k] * g)); } });
+    });
   }
-  if (!ok(cur) && cur.mode !== "aura"){
-    var bm = cur; for (var m2 = 0.4; m2 <= 2.501; m2 += 0.05){ var c3 = clone(cur); teSetMult(c3, m2); if (Math.abs(Math.log(teRatio(c3))) < Math.abs(Math.log(teRatio(bm)))) bm = c3; } cur = bm;
-  }
-  return {before: before, after: cur};
+  cur.interval = +Math.max(0.15, Math.round(cur.interval * 20) / 20).toFixed(2);
+  cur.range = +(Math.round(cur.range * 4) / 4).toFixed(2);
+  cur.radius = +(Math.round(cur.radius * 10) / 10).toFixed(1);
+  Object.keys(cur.fx || {}).forEach(function(k){ var d = TE_FX.filter(function(x){ return x[0] === k; })[0]; if (d && cur.fx[k] > 0) cur.fx[k] = +Math.max(d[5], Math.round(cur.fx[k] / d[5]) * d[5]).toFixed(2); });
+  var rr = teRatio(cur);
+  if (!levers.length) note = "움직일 수 있는 항목이 없다. 고정을 풀거나 ‘가격으로 맞추기’를 써 보자.";
+  else if (rr < 0.85 || rr > 1.15) note = "고정한 항목과 한도(공격 간격 0.15~6초, 사거리 1.5~6칸, 범위 0.3~3칸) 안에서는 여기까지 맞출 수 있다. 남은 차이는 ‘가격으로 맞추기’로 메우거나 고정을 풀어 보자.";
+  return {before: before, after: cur, note: note};
 }
-function teEncode(px){ var pal = [], idx = ""; px.forEach(function(c){ if (!c){ idx += "."; return; } var i = pal.indexOf(c); if (i < 0){ pal.push(c); i = pal.length - 1; } idx += "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"[i]; }); return {pal: pal, idx: idx}; }
-function teDecode(o){ var A = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", px = []; for (var i = 0; i < 256; i++){ var ch = (o.idx || "")[i]; var c = ch && ch !== "." ? o.pal[A.indexOf(ch)] : null; px.push(typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : null); } return px; }
-function pxCanvas(px, scale){ var c = document.createElement("canvas"); c.width = c.height = 16 * scale; var x = c.getContext("2d"); for (var i = 0; i < 256; i++) if (px[i]){ x.fillStyle = px[i]; x.fillRect((i % 16) * scale, Math.floor(i / 16) * scale, scale, scale); } return c; }
-function designSim(a, b){ var both = 0, either = 0, same = 0; for (var i = 0; i < 256; i++){ var p = !!a[i], q = !!b[i]; if (p || q) either++; if (p && q){ both++; if (a[i].toLowerCase() === b[i].toLowerCase()) same++; } } return either ? 0.5 * both / either + 0.5 * same / either : 0; }
+function pxN(px){ return Math.round(Math.sqrt(px.length)) || 16; }
+function pxResample(px, to){ var n = pxN(px); if (n === to) return px.slice(); var out = []; for (var y = 0; y < to; y++) for (var x = 0; x < to; x++) out.push(px[Math.floor(y * n / to) * n + Math.floor(x * n / to)] || null); return out; }
+function teEncode(px){ var pal = [], idx = ""; px.forEach(function(c){ if (!c){ idx += "."; return; } var i = pal.indexOf(c); if (i < 0){ pal.push(c); i = pal.length - 1; } idx += "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"[i]; }); return {pal: pal, idx: idx, n: pxN(px)}; }
+function teDecode(o){ var A = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", px = [], n = [16,24,32].indexOf(+o.n) >= 0 ? +o.n : 16; for (var i = 0; i < n * n; i++){ var ch = (o.idx || "")[i]; var c = ch && ch !== "." ? o.pal[A.indexOf(ch)] : null; px.push(typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : null); } return px; }
+function pxCanvas(px, scale){ var n = pxN(px), c = document.createElement("canvas"); c.width = c.height = n * scale; var x = c.getContext("2d"); for (var i = 0; i < n * n; i++) if (px[i]){ x.fillStyle = px[i]; x.fillRect((i % n) * scale, Math.floor(i / n) * scale, scale, scale); } return c; }
+function designSim(a, b){ a = pxResample(a, 16); b = pxResample(b, 16); var both = 0, either = 0, same = 0; for (var i = 0; i < 256; i++){ var p = !!a[i], q = !!b[i]; if (p || q) either++; if (p && q){ both++; if (a[i].toLowerCase() === b[i].toLowerCase()) same++; } } return either ? 0.5 * both / either + 0.5 * same / either : 0; }
 
 PAGES.toweredit = {cats:["제작"], html:function(){
   var modes = TE_MODES.map(function(m){ return '<option value="' + m[0] + '">' + m[1] + '</option>'; }).join("");
@@ -74,10 +94,10 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   var fx = TE_FX.map(function(f){ return '<label class="fx"><span>' + f[1] + ' <small>' + f[6] + '</small></span><span class="fxi"><input type="number" id="fx-' + f[0] + '" min="' + f[3] + '" max="' + f[4] + '" step="' + f[5] + '" inputmode="decimal"><em>' + f[2] + '</em></span></label>'; }).join("");
   return '<p>새 특수 단어 타워의 컨셉과 픽셀 디자인을 만드는 도구다. 저장한 타워는 Claude가 읽어 게임과 도감에 넣는다. 저장한 뒤 채팅에서 "타워 저장했어"라고 알려 주면 된다.</p>' +
   '<div class="te">' +
-  '<section class="te-col"><h3 class="te-h">픽셀 디자인 <small>16 × 16</small></h3><p class="te-desc">타워의 생김새를 한 칸씩 칠한다. 게임에서는 작게 보이므로 굵은 실루엣과 속성 색 한두 가지가 눈에 잘 띈다. 아래쪽 두세 줄은 받침대로 남겨 두면 단어 띠와 잘 어울린다.</p>' +
-  '<canvas id="tec" width="320" height="320" aria-label="타워 픽셀 편집 격자"></canvas>' +
+  '<section class="te-col"><h3 class="te-h">픽셀 디자인 <small id="tesizelbl">16 × 16</small></h3><p class="te-desc">타워의 생김새를 한 칸씩 칠한다. 게임에서는 작게 보이므로 굵은 실루엣과 속성 색 한두 가지가 눈에 잘 띈다. 아래쪽 두세 줄은 받침대로 남겨 두면 단어 띠와 잘 어울린다.</p>' +
+  '<div class="row" style="gap:8px"><label class="field" style="flex:1 1 120px">해상도 (칸 수)<select id="tes"><option value="16">16 × 16 (기본)</option><option value="24">24 × 24</option><option value="32">32 × 32 (세밀)</option></select><small class="hint">칸이 많을수록 세밀하지만 게임 안에서는 같은 크기로 줄어든다</small></label><label class="field" style="flex:1 1 120px">칸 크기 (확대)<select id="tez"><option value="240">작게</option><option value="320">보통</option><option value="420">크게</option><option value="560">아주 크게</option></select><small class="hint">그리기 편하게 격자 화면만 키운다</small></label></div><div class="tecwrap"><canvas id="tec" width="384" height="384" aria-label="타워 픽셀 편집 격자"></canvas></div>' +
   '<div class="row te-tools" id="tetools"><button class="btn on" data-t="pen">펜</button><button class="btn" data-t="erase">지우개</button><button class="btn" data-t="fill">채우기</button><button class="btn" data-t="pick">스포이드</button><button class="btn" id="temir" aria-pressed="false">좌우 대칭</button></div>' +
-  '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 격자에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p>' +
+  '<p class="te-desc"><b>펜</b> 한 칸씩 칠하기 · <b>지우개</b> 칸 비우기 · <b>채우기</b> 같은 색으로 이어진 영역 한 번에 칠하기 · <b>스포이드</b> 격자에서 색 집어 오기 · <b>좌우 대칭</b> 한쪽을 칠하면 반대쪽도 똑같이 칠해짐</p><div class="swatches" id="tesw"></div><p class="te-desc">앞의 세 색은 고른 속성의 기본·밝은·어두운 색이고, 그 뒤는 돌, 먹, 포인트 색이다.</p><h3 class="te-h">이미지로 그리기</h3><p class="te-desc">그림 파일을 올리거나 끌어다 놓으면 배경을 지우고(누끼) 지금 해상도의 픽셀로 바꿔 준다. 배경이 단색이거나 투명한 그림, 캐릭터 일러스트가 가장 잘 된다. 바꾼 뒤 펜으로 다듬으면 된다.</p><label class="drop" id="tedrop"><input type="file" id="tefile" accept="image/*" hidden><b>이미지를 여기에 끌어다 놓거나 눌러서 고르기</b><small>PNG·JPG·GIF·WEBP · 복사한 이미지는 붙여넣기(Ctrl+V)</small></label><div class="row" style="gap:8px"><label class="field" style="flex:1 1 140px">배경 지우기<select id="tebg"><option value="auto">자동 (가장자리 색 지우기)</option><option value="alpha">투명한 부분만</option><option value="none">지우지 않음</option></select></label><label class="field" style="flex:1 1 140px">배경 허용 오차 <span id="tetolv" class="count">40</span><input type="range" id="tetol" min="5" max="140" value="40"><small class="hint">배경이 덜 지워지면 올리고, 그림까지 지워지면 내린다</small></label></div><div class="row" style="gap:8px"><label class="field" style="flex:1 1 90px">색 수<select id="tecols"><option>6</option><option>8</option><option selected>12</option><option>16</option><option>24</option></select></label><label class="chk"><input type="checkbox" id="teol" checked> 검은 외곽선</label><label class="chk"><input type="checkbox" id="teped" checked> 받침대 붙이기</label></div><div class="row" style="gap:6px"><button class="btn" id="teredo" disabled>설정 바꿔 다시 변환</button><span class="count" id="teimgst"></span></div>' +
   '<div class="row" style="gap:6px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">직접 고르기<input type="color" id="tecol" value="#f08a24" style="width:48px;min-height:36px;padding:2px"></label><button class="btn" id="teundo">되돌리기</button><button class="btn" id="teclear">비우기</button></div>' +
   '<h3 class="te-h">인게임 미리보기</h3><p class="te-desc">왼쪽은 실제 게임 칸 크기, 오른쪽은 크게 본 모습이다. 칸 크기에서도 무슨 타워인지 알아볼 수 있는지 확인하자. 단어 띠의 아래 테두리 색은 속성 색이다.</p><div class="te-prev"><div class="board" style="aspect-ratio:3/2;max-width:200px"><canvas id="teprevbg"></canvas><div class="bt" style="left:33.33%;top:0;width:33.33%;height:50%"><img id="teprev" alt="미리보기"><span class="plate" id="teplate">WORD</span></div></div><div class="tcell" id="tebig"></div></div>' +
   '<h3 class="te-h">디자인 자동 추천</h3><p class="te-desc">고른 속성의 기존 단어 아이콘 8개를 후보로 보여 준다 (단어가 이미 목록에 있으면 그 아이콘이 첫 번째). 마음에 드는 것을 눌러 불러온 뒤, 새 단어 뜻에 맞게 고쳐 그리면 된다. 아래 네 줄은 공통 받침대이니 그대로 두고 위쪽 아이콘만 고치면 된다. ‘다른 후보 보기’로 계속 넘겨 볼 수 있다.</p><div class="recs" id="terecs"></div><button class="btn" id="temore">다른 후보 보기</button>' +
@@ -91,26 +111,28 @@ PAGES.toweredit = {cats:["제작"], html:function(){
   '<details class="fold" open><summary>효과</summary><p class="te-desc" style="padding-top:8px">공격에 붙는 추가 능력. 비워 두면 없음. 숫자가 클수록 전투력이 오르니 밸런스 칸을 보며 조절하자. 여러 개를 섞으면 원소 반응과 어울리는 개성 있는 타워가 된다.</p><div class="fxs">' + fx + '</div></details>' +
   '<label class="field">★Lv5 강화<input id="telv5" maxlength="120" placeholder="예: 광선 2줄"><small class="hint">같은 단어를 합성해 5레벨이 되면 얻는 추가 효과</small></label>' +
   '<div class="row" style="gap:6px"><button class="btn" id="tepreset">속성 기본 컨셉 추천</button></div><p class="te-desc">고른 속성의 대표적인 공격 방식과 효과를 채우고 밸런스까지 맞춘다. 희귀 글자(K, J, X, Q, Z)가 들어가면 치명타를, 7글자 이상이면 사거리를 더 준다.</p>' +
-  '<h3 class="te-h">밸런스</h3><p class="te-desc">전투력(초당 피해 × 공격 방식 × 사거리 × 효과 + 지원 효과)을 건설 비용과 비교한다. 0.85~1.15가 <b>적정</b>, 낮으면 <b>약함</b>, 높으면 <b>강함</b>. 자동 조정은 공격 간격 → 효과 수치 → 배율 순서로 고치고 무엇이 바뀌었는지 표로 보여 준다.</p><div class="bal" id="tebal"></div><div class="row" style="gap:6px"><button class="btn pri" id="teauto">밸런스 자동 조정</button></div><div id="tebaldiff"></div>' +
+  '<h3 class="te-h">밸런스</h3><p class="te-desc">전투력(초당 피해 × 공격 방식 × 사거리 × 효과 + 지원 효과)을 건설 비용과 비교한다. 0.85~1.15가 <b>적정</b>, 낮으면 <b>약함</b>, 높으면 <b>강함</b>. <b>능력으로 맞추기</b>는 고정하지 않은 항목(공격 간격, 효과, 범위, 사거리)을 조금씩 나눠 움직이고, <b>가격으로 맞추기</b>는 능력은 그대로 두고 비용만 바꾼다. 무엇이 바뀌었는지 표로 보여 준다.</p><div class="bal" id="tebal"></div><div class="row locks" id="telocks"><b style="font-size:13px">자동 조정에서 고정:</b>' + TE_LOCKS.map(function(l){ return '<label class="chk"><input type="checkbox" data-lock="' + l[0] + '"> ' + l[1] + '</label>'; }).join("") + '</div><p class="te-desc">컨셉에 꼭 필요한 값은 체크해서 고정하자. 예: 미니건처럼 연사가 핵심이면 ‘공격 간격’ 고정. 공격력은 비용과 함께 오르내리므로 밸런스 판정에는 영향이 없다.</p><div class="row" style="gap:8px;align-items:flex-end"><label class="field" style="flex:0 1 160px">가격 배율<input type="number" id="teprice" min="0.3" max="10" step="0.05" inputmode="decimal"><small class="hint">능력은 그대로 두고 건설 비용만 곱한다</small></label></div><div class="row" style="gap:6px"><button class="btn pri" id="teauto">능력으로 맞추기</button><button class="btn" id="teautop">가격으로 맞추기</button></div><div id="tebaldiff"></div>' +
   '<h3 class="te-h">겹침 분석</h3><p class="te-desc">기존 타워와 세 가지를 비교한다. <b>단어</b>: 이미 있는 단어나 파생어(FIRE → FIRED)인지. <b>디자인</b>: 픽셀 모양과 색이 비슷한 타워. <b>능력</b>: 효과와 속성이 비슷한 타워. 60~70% 이상이면 차별점을 하나 더 넣는 걸 권한다.</p><div class="row" style="gap:6px"><button class="btn" id="teov">기존 타워와 비교</button></div><div id="teovout"><p class="count">단어, 디자인, 능력이 기존 ' + WORDS.length + '개 타워와 얼마나 겹치는지 검사한다.</p></div>' +
   '<h3 class="te-h">저장</h3><p class="te-desc">저장하면 위키 저장소에 들어가 Claude가 읽을 수 있다. 같은 단어로 다시 저장하면 덮어쓴다.</p><div class="row" style="gap:6px"><button class="btn pri" id="tesave">타워 저장</button><button class="btn" id="tenew">새 타워</button></div><p class="count" id="tedb" style="margin:0"></p>' +
   '</section></div>' +
   '<h2>테스터 제출 코드 불러오기</h2><p>크리에이터 페이지에서 받은 WTDT1. 코드를 붙여 넣으면 편집기로 불러온다. 확인한 뒤 타워 저장을 누르면 저장소에 들어간다.</p><div class="row"><input class="inp" id="teimp" placeholder="WTDT1.…" style="flex:1 1 260px" aria-label="타워 제출 코드"><button class="btn" id="teimpb">불러오기</button></div>' +
   '<h2>저장된 타워</h2><div class="saved" id="tesaved"><p class="count">저장된 타워를 불러오는 중입니다.</p></div>' +
-  '<h2>밸런스 계산 방식</h2><ul><li><b>공격력</b>은 직접 정한다. 단어의 공식 공격력(글자 점수 합 × 3 × (1 + 0.15 × (글자 수 − 3)))과 비교한 비율이 <b>배율</b>이 되고, 배율이 곧 비용 배율이다. 공격력을 올리면 비용도 오른다. 배율 칸을 고치면 공격력이 거꾸로 맞춰진다. 공격 간격과 사거리 기본값은 ' + link("words","기본 스탯 공식") + '을 따른다.</li><li><b>전투력</b> = 초당 피해 × 공격 방식 계수 × √(사거리 / 2.5) × (1 + 효과 가치) + 지원 가치.</li><li>효과 가치: 화상 1%당 0.03, 둔화 0.012, 기절 0.01, 연쇄 1회 0.45, 독 1중첩 0.15, 넉백 1칸 0.8, 즉사 1%당 0.03, 방어 무시 0.004, 치명타 0.01.</li><li>지원 가치: 주변 강화 1%당 3.2 × √배율, 골드 1G당 5, 생명 회복 1당 55 (KING, COIN, HEAL 기준으로 맞춤).</li><li><b>적정 기준</b>: 전투력 ÷ 건설 비용이 0.85~1.15. 기존 타워 FIRE가 약 0.96이다.</li><li>자동 조정 순서: ① 공격 간격(0.2~3.5초)으로 맞춘다 ② 그래도 벗어나면 효과 수치를 같은 비율로 줄이거나 늘린다 ③ 마지막으로 배율(= 비용)을 0.4~2.5 안에서 고친다. 지원(오라) 타워는 배율부터 맞춘다. 목표는 0.92~1.08.</li></ul>';
+  '<h2>밸런스 계산 방식</h2><ul><li><b>공격력</b>은 직접 정한다. 단어의 공식 공격력(글자 점수 합 × 3 × (1 + 0.15 × (글자 수 − 3)))과 비교한 비율이 <b>배율</b>이 되고, 배율이 곧 비용 배율이다. 공격력을 올리면 비용도 오른다. 배율 칸을 고치면 공격력이 거꾸로 맞춰진다. 공격 간격과 사거리 기본값은 ' + link("words","기본 스탯 공식") + '을 따른다.</li><li><b>전투력</b> = 초당 피해 × 공격 방식 계수 × √(사거리 / 2.5) × (1 + 효과 가치) + 지원 가치.</li><li>효과 가치: 화상 1%당 0.03, 둔화 0.012, 기절 0.01, 연쇄 1회 0.45, 독 1중첩 0.15, 넉백 1칸 0.8, 즉사 1%당 0.03, 방어 무시 0.004, 치명타 0.01.</li><li>지원 가치: 주변 강화 1%당 3.2 × √배율, 골드 1G당 5, 생명 회복 1당 55 (KING, COIN, HEAL 기준으로 맞춤).</li><li><b>적정 기준</b>: 전투력 ÷ 건설 비용이 0.85~1.15. 기존 타워 FIRE가 약 0.96이다.</li><li><b>능력으로 맞추기</b>: 고정하지 않은 항목을 한꺼번에 조금씩 움직여 0.97~1.03에 맞춘다. 한도는 공격 간격 0.15~6초, 사거리 1.5~5칸, 범위 0.3~3칸. 효과는 이미 있는 것만 비율대로 줄이거나 늘리고, 새 효과를 더하거나 1%짜리로 잘게 쪼개지 않는다. 공격력은 비용과 함께 오르내려 판정에 영향이 없으므로 건드리지 않는다. 사거리는 기본으로 고정된다.</li><li><b>가격으로 맞추기</b>: 능력은 그대로 두고 가격 배율(0.3~10배)을 바꿔 비용을 맞춘다. "강하지만 비싼" 타워를 만들 때 쓴다. 예: 공격 간격을 고정한 미니건은 능력만으로 5.2까지 내려오고, 나머지는 가격 ×5.4로 맞춘다.</li><li>건설 비용 = (10 + 글자 점수 합 × 4) × 배율 × 가격 배율.</li></ul>';
 }, after:function(){ teInit(); }};
 
 var TE = null, teDb = null, teDocs = null, teTried = false, teRecSalt = 0;
-function teDefault(){ return {word:"QUASAR", ko:"퀘이사", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, dmg:+(teBase("QUASAR").atk * 1.2).toFixed(1), dtype:"magic", interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:(TG.icon("NOVA","light",false) || TG.make("QUASAR","light",false,0)).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false}; }
+function teDefault(){ return {word:"QUASAR", ko:"퀘이사", kind:"light", concept:"별의 핵이 폭발하듯 일직선을 꿰뚫는 광선", mode:"pierce", radius:0, mult:1.2, dmg:+(teBase("QUASAR").atk * 1.2).toFixed(1), dtype:"magic", interval:1.8, range:teBase("QUASAR").range, fx:{crit:10, slow:10}, lv5:"광선 2줄", px:(TG.icon("NOVA","light",false) || TG.make("QUASAR","light",false,0)).slice(), undo:[], tool:"pen", color:"#ffe680", mirror:false, price:1, lock:{range:true}, zoom:320}; }
 function teInit(){
   if (!TE) TE = teDefault();
   var cv = document.getElementById("tec"), ctx = cv.getContext("2d");
   var $ = function(id){ return document.getElementById(id); };
-  function grid(){ ctx.clearRect(0,0,320,320); for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++){ ctx.fillStyle = (x + y) % 2 ? "#c9ccd3" : "#bfc2ca"; ctx.fillRect(x*20, y*20, 20, 20); if (TE.px[y*16+x]){ ctx.fillStyle = TE.px[y*16+x]; ctx.fillRect(x*20, y*20, 20, 20); } }
-    if (TE.mirror){ ctx.fillStyle = "rgba(53,82,201,.6)"; ctx.fillRect(159, 0, 2, 320); } }
+  function N(){ return pxN(TE.px); }
+  function grid(){ var n = N(), c = 384 / n; ctx.clearRect(0,0,384,384); for (var y = 0; y < n; y++) for (var x = 0; x < n; x++){ ctx.fillStyle = (x + y) % 2 ? "#c9ccd3" : "#bfc2ca"; ctx.fillRect(x*c, y*c, c, c); if (TE.px[y*n+x]){ ctx.fillStyle = TE.px[y*n+x]; ctx.fillRect(x*c, y*c, c, c); } }
+    if (TE.mirror){ ctx.fillStyle = "rgba(53,82,201,.6)"; ctx.fillRect(191, 0, 2, 384); }
+    $("tesizelbl").textContent = n + " × " + n; }
   function preview(){
     grid();
-    var url = pxCanvas(TE.px, 4).toDataURL(); $("teprev").src = url; $("teplate").textContent = TE.word || "WORD"; $("teplate").style.borderColor = EL[TE.kind].m;
+    var url = pxCanvas(TE.px, Math.max(1, Math.round(64 / N()))).toDataURL(); $("teprev").src = url; $("teplate").textContent = TE.word || "WORD"; $("teplate").style.borderColor = EL[TE.kind].m;
     $("tebig").innerHTML = '<img src="' + url + '" width="96" height="96" alt="" style="image-rendering:pixelated;width:96px;height:96px"><span class="plate" style="border-color:' + EL[TE.kind].m + '">' + esc(TE.word || "WORD") + '</span>';
   }
   drawMap($("teprevbg"), ["...","..."], 32, 0);
@@ -119,9 +141,9 @@ function teInit(){
     $("tesw").innerHTML = cols.map(function(c){ return '<button class="sw' + (c === TE.color ? ' on' : '') + '" data-c="' + c + '" style="background:' + c + '" aria-label="색 ' + c + '"></button>'; }).join("");
   }
   function snap(){ TE.undo.push(TE.px.slice()); if (TE.undo.length > 80) TE.undo.shift(); }
-  function setPx(i, c){ TE.px[i] = c; if (TE.mirror){ var x = i % 16, y = Math.floor(i / 16); TE.px[y*16 + 15 - x] = c; } }
-  function fill(i, c){ var t = TE.px[i]; if (t === c) return; var st = [i], seen = {}; while (st.length){ var k = st.pop(); if (seen[k] || TE.px[k] !== t) continue; seen[k] = 1; TE.px[k] = c; var x = k % 16, y = Math.floor(k / 16); if (x > 0) st.push(k-1); if (x < 15) st.push(k+1); if (y > 0) st.push(k-16); if (y < 15) st.push(k+16); } }
-  function at(e){ var r = cv.getBoundingClientRect(); var x = Math.floor((e.clientX - r.left) / r.width * 16), y = Math.floor((e.clientY - r.top) / r.height * 16); return x < 0 || y < 0 || x > 15 || y > 15 ? -1 : y * 16 + x; }
+  function setPx(i, c){ var n = N(); TE.px[i] = c; if (TE.mirror){ var x = i % n, y = Math.floor(i / n); TE.px[y*n + n - 1 - x] = c; } }
+  function fill(i, c){ var n = N(), t = TE.px[i]; if (t === c) return; var st = [i], seen = {}; while (st.length){ var k = st.pop(); if (seen[k] || TE.px[k] !== t) continue; seen[k] = 1; TE.px[k] = c; var x = k % n, y = Math.floor(k / n); if (x > 0) st.push(k-1); if (x < n-1) st.push(k+1); if (y > 0) st.push(k-n); if (y < n-1) st.push(k+n); } }
+  function at(e){ var n = N(), r = cv.getBoundingClientRect(); var x = Math.floor((e.clientX - r.left) / r.width * n), y = Math.floor((e.clientY - r.top) / r.height * n); return x < 0 || y < 0 || x >= n || y >= n ? -1 : y * n + x; }
   var down = false;
   function act(e, first){ var i = at(e); if (i < 0) return;
     if (TE.tool === "pick"){ if (TE.px[i]){ TE.color = TE.px[i]; $("tecol").value = TE.color; swatches(); TE.tool = "pen"; tools(); } return; }
@@ -136,7 +158,28 @@ function teInit(){
   $("temir").onclick = function(){ TE.mirror = !TE.mirror; tools(); grid(); };
   $("tesw").addEventListener("click", function(e){ var b = e.target.closest("[data-c]"); if (!b) return; TE.color = b.getAttribute("data-c"); $("tecol").value = TE.color; if (TE.tool === "erase" || TE.tool === "pick") TE.tool = "pen"; tools(); swatches(); });
   $("tecol").oninput = function(){ TE.color = this.value; if (TE.tool !== "fill") TE.tool = "pen"; tools(); swatches(); };
-  $("teundo").onclick = function(){ if (TE.undo.length){ TE.px = TE.undo.pop(); preview(); } };
+  $("teundo").onclick = function(){ if (TE.undo.length){ TE.px = TE.undo.pop(); $("tes").value = N(); preview(); } };
+  /* 해상도와 확대 */
+  function zoom(){ cv.style.maxWidth = (TE.zoom || 320) + "px"; $("tez").value = TE.zoom || 320; }
+  $("tes").value = N(); zoom();
+  $("tes").onchange = function(){ var to = +this.value; if (to === N()) return; snap(); TE.px = pxResample(TE.px, to); preview(); toast(to + " × " + to + " 격자로 바꿨습니다. 되돌리기로 이전 크기로 돌아갈 수 있습니다."); };
+  $("tez").onchange = function(){ TE.zoom = +this.value; zoom(); };
+  /* 이미지로 그리기 */
+  var lastImg = null;
+  function loadFile(f){ if (!f || !/^image\//.test(f.type)){ toast("이미지 파일만 쓸 수 있습니다 (PNG, JPG, GIF, WEBP)."); return; } if (f.size > 15 * 1024 * 1024){ toast("파일이 너무 큽니다 (15MB 이하)."); return; }
+    var u = URL.createObjectURL(f), im = new Image(); im.onload = function(){ lastImg = im; $("teredo").disabled = false; convert(); }; im.onerror = function(){ toast("이미지를 읽지 못했습니다. 다른 파일로 해 보세요."); URL.revokeObjectURL(u); }; im.src = u; }
+  function convert(){ if (!lastImg) return; var res = imgToPx(lastImg, N(), {bg: $("tebg").value, tol: +$("tetol").value, cols: +$("tecols").value, outline: $("teol").checked, ped: $("teped").checked, kind: TE.kind});
+    if (!res){ $("teimgst").textContent = "남은 그림이 없습니다. 허용 오차를 낮추거나 ‘지우지 않음’을 골라 보세요."; return; }
+    snap(); TE.px = res.px; preview(); $("teimgst").textContent = "변환 완료: 색 " + res.colors + "개, 칠한 칸 " + res.filled + "개"; toast("이미지를 픽셀로 바꿨습니다. 펜으로 다듬어 보세요."); }
+  $("tefile").onchange = function(){ loadFile(this.files[0]); this.value = ""; };
+  ["tedrop", "tec"].forEach(function(id){ var el = $(id);
+    el.addEventListener("dragover", function(e){ e.preventDefault(); $("tedrop").classList.add("over"); });
+    el.addEventListener("dragleave", function(){ $("tedrop").classList.remove("over"); });
+    el.addEventListener("drop", function(e){ e.preventDefault(); $("tedrop").classList.remove("over"); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); }); });
+  if (!window.__tePaste){ window.__tePaste = 1; document.addEventListener("paste", function(e){ if (!document.getElementById("tec")) return; var items = (e.clipboardData && e.clipboardData.items) || []; for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0){ e.preventDefault(); var f = items[i].getAsFile(); var fn = window.__teLoad; if (fn) fn(f); return; } }); }
+  window.__teLoad = loadFile;
+  $("tetol").oninput = function(){ $("tetolv").textContent = this.value; };
+  $("teredo").onclick = convert;
   var clr = 0; $("teclear").onclick = function(){ var b = this; if (Date.now() - clr > 3000){ clr = Date.now(); b.textContent = "한 번 더 누르면 비움"; setTimeout(function(){ b.textContent = "비우기"; }, 3000); return; } snap(); TE.px = TE.px.map(function(){ return null; }); b.textContent = "비우기"; clr = 0; preview(); };
   function recs(){
     var w = TE.word.length >= 3 ? TE.word : "TOWER", box = $("terecs"); box.innerHTML = "";
@@ -147,11 +190,12 @@ function teInit(){
     var h = 0; for (var i = 0; i < w.length; i++) h = (h * 31 + w.charCodeAt(i)) >>> 0;
     var start = (h + teRecSalt * 8) % Math.max(1, pool.length);
     for (var j = 0; cands.length < 8 && j < pool.length; j++){ var p = pool[(start + j * 7) % pool.length]; if (!cands.some(function(c){ return c.w === p.w; })) cands.push({w: p.w, g: TG.icon(p.w, TE.kind, false)}); }
-    cands.forEach(function(c, s){ if (!c.g) return; var b = document.createElement("button"); b.className = "rec"; b.title = c.w + " 아이콘에서 시작"; b.setAttribute("aria-label", c.w + " 아이콘을 바탕으로 시작"); b.appendChild(pxCanvas(c.g, 3)); var sm = document.createElement("small"); sm.textContent = c.w; b.appendChild(sm); b.onclick = function(){ snap(); TE.px = c.g.slice(); preview(); toast(c.w + " 아이콘을 불러왔습니다. 단어에 맞게 고쳐 보세요."); }; box.appendChild(b); });
+    cands.forEach(function(c, s){ if (!c.g) return; var b = document.createElement("button"); b.className = "rec"; b.title = c.w + " 아이콘에서 시작"; b.setAttribute("aria-label", c.w + " 아이콘을 바탕으로 시작"); b.appendChild(pxCanvas(c.g, 3)); var sm = document.createElement("small"); sm.textContent = c.w; b.appendChild(sm); b.onclick = function(){ snap(); TE.px = pxResample(c.g, N()); preview(); toast(c.w + " 아이콘을 불러왔습니다. 단어에 맞게 고쳐 보세요."); }; box.appendChild(b); });
   }
   $("temore").onclick = function(){ teRecSalt++; recs(); };
   /* 컨셉 폼 */
   function form(){
+    $("teprice").value = +TE.price > 0 ? TE.price : 1; [].forEach.call(document.querySelectorAll("#telocks [data-lock]"), function(c){ c.checked = !!(TE.lock || {})[c.getAttribute("data-lock")]; });
     $("teword").value = TE.word; $("teko").value = TE.ko || ""; $("teel").value = TE.kind; $("teconcept").value = TE.concept; $("temode").value = TE.mode; $("teradius").value = TE.radius;
     $("temult").value = TE.mult; $("tedmg").value = TE.dmg; $("tedtype").value = TE.dtype || "physical"; $("teint").value = TE.interval; $("terange").value = TE.range; $("telv5").value = TE.lv5;
     TE_FX.forEach(function(f){ $("fx-" + f[0]).value = TE.fx[f[0]] || ""; });
@@ -162,6 +206,7 @@ function teInit(){
     TE.word = $("teword").value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); $("teword").value = TE.word;
     if (document.activeElement !== $("teko")) { TE.ko = $("teko").value.replace(/[^가-힣]/g, "").slice(0, 8); } else { TE.ko = $("teko").value.replace(/\s/g, "").slice(0, 8); }
     TE.kind = $("teel").value; TE.concept = $("teconcept").value; TE.mode = $("temode").value; TE.radius = +$("teradius").value || 0;
+    TE.price = Math.min(10, Math.max(0.3, +$("teprice").value || 1)); TE.lock = {}; [].forEach.call(document.querySelectorAll("#telocks [data-lock]"), function(c){ if (c.checked) TE.lock[c.getAttribute("data-lock")] = true; });
     TE.dtype = $("tedtype").value; TE.dmg = Math.min(2000, Math.max(1, +$("tedmg").value || 1)); TE.mult = +(TE.dmg / teBaseAtk(TE)).toFixed(2); if (document.activeElement !== $("temult")) $("temult").value = TE.mult; TE.interval = Math.min(4, Math.max(0.1, +$("teint").value || 1)); TE.range = Math.min(7, Math.max(1, +$("terange").value || 2)); TE.lv5 = $("telv5").value;
     TE.fx = {}; TE_FX.forEach(function(f){ var v = +$("fx-" + f[0]).value; if (v > 0) TE.fx[f[0]] = Math.min(f[4], v); });
     $("teradius").disabled = TE.mode !== "aoe"; hints();
@@ -176,7 +221,7 @@ function teInit(){
       '<div class="count">1회 피해 ' + TE.dmg + ' · 초당 피해 ' + p.dps.toFixed(1) + ' · 효과 가치 +' + Math.round(p.util * 100) + '% · 지원 가치 ' + p.sup.toFixed(1) + '</div>';
   }
   function update(){ read(); bal(); preview(); }
-  ["teword","teko","teel","teconcept","temode","teradius","tedmg","tedtype","teint","terange","telv5"].forEach(function(id){ $(id).addEventListener("input", update); $(id).addEventListener("change", update); });
+  ["teprice","teword","teko","teel","teconcept","temode","teradius","tedmg","tedtype","teint","terange","telv5"].forEach(function(id){ $(id).addEventListener("input", update); $(id).addEventListener("change", update); });
   TE_FX.forEach(function(f){ $("fx-" + f[0]).addEventListener("input", update); });
   $("temult").addEventListener("input", function(){ var m = Math.min(5, Math.max(0.1, +this.value || 1)); $("tedmg").value = +(teBaseAtk({word:$("teword").value.toUpperCase().replace(/[^A-Z]/g, "")}) * m).toFixed(1); update(); });
   $("teel").addEventListener("change", function(){ swatches(); recs(); });
@@ -187,17 +232,24 @@ function teInit(){
     var rare = (TE.word.match(/[KJXQZ]/g) || []).length; if (rare) TE.fx.crit = (TE.fx.crit || 0) + 10 * rare;
     if (TE.word.length >= 7) TE.range = Math.min(4.5, TE.range + 0.5);
     if (!TE.concept) TE.concept = EL[TE.kind].n + " 속성 " + (TE_MODES.filter(function(m){ return m[0] === TE.mode; })[0][1]) + " 타워";
-    var r = teBalance(TE).after; TE.mult = r.mult; TE.dmg = r.dmg; TE.fx = r.fx; TE.interval = r.interval;
+    var r = teBalance(TE).after; TE.fx = r.fx; TE.interval = r.interval; TE.range = r.range; TE.radius = r.radius;
     form(); bal(); toast("속성 기본 컨셉을 넣고 밸런스를 맞췄습니다.");
   };
-  $("teauto").onclick = function(){
-    read(); var res = teBalance(TE), a = res.before, z = res.after, rows = [];
-    if (a.dmg !== z.dmg) rows.push(["공격력", a.dmg, z.dmg]); if (a.mult !== z.mult) rows.push(["배율", a.mult, z.mult]); if (teCost(a) !== teCost(z)) rows.push(["비용", teCost(a) + "G", teCost(z) + "G"]); if (a.interval !== z.interval) rows.push(["공격 간격", a.interval + "초", z.interval + "초"]);
-    TE_FX.forEach(function(f){ var x = a.fx[f[0]] || 0, y = z.fx[f[0]] || 0; if (x !== y) rows.push([f[1], x + f[2], y + f[2]]); });
+  function applyBal(how){
+    read(); var res = teBalance(TE, how), a = res.before, z = res.after, rows = [];
+    if (a.interval !== z.interval) rows.push(["공격 간격", a.interval + "초", z.interval + "초"]);
+    if (a.range !== z.range) rows.push(["사거리", a.range + "칸", z.range + "칸"]);
+    if (a.radius !== z.radius) rows.push(["범위 반경", a.radius + "칸", z.radius + "칸"]);
+    TE_FX.forEach(function(f){ var x = (a.fx || {})[f[0]] || 0, y = (z.fx || {})[f[0]] || 0; if (x !== y) rows.push([f[1], x + f[2], y + f[2]]); });
+    if ((+a.price || 1) !== (+z.price || 1)) rows.push(["가격 배율", "×" + (+a.price || 1), "×" + z.price]);
+    if (teCost(a) !== teCost(z)) rows.push(["비용", teCost(a) + "G", teCost(z) + "G"]);
     rows.push(["전투력 ÷ 비용", teRatio(a).toFixed(2), teRatio(z).toFixed(2)]);
-    TE.mult = z.mult; TE.dmg = z.dmg; TE.fx = z.fx; TE.interval = z.interval; form(); bal();
-    $("tebaldiff").innerHTML = table(["항목","조정 전","조정 후"], rows.map(function(r){ return [r[0], String(r[1]), "<b>" + r[2] + "</b>"]; }));
-  };
+    TE.interval = z.interval; TE.range = z.range; TE.radius = z.radius; TE.fx = z.fx; TE.price = z.price; form(); bal();
+    $("tebaldiff").innerHTML = table(["항목","조정 전","조정 후"], rows.map(function(r){ return [r[0], String(r[1]), "<b>" + r[2] + "</b>"]; })) + (res.note ? '<p class="te-desc">' + esc(res.note) + '</p>' : '');
+  }
+  $("teauto").onclick = function(){ applyBal("ability"); };
+  $("teautop").onclick = function(){ applyBal("price"); };
+
   /* 겹침 분석 */
   $("teov").onclick = function(){
     read(); var out = [], w = TE.word;
@@ -230,7 +282,7 @@ function teInit(){
     if (TE.word.length < 3){ toast("단어를 영문 3글자 이상 적어 주세요."); $("teword").focus(); return; }
     if (!TE.px.some(Boolean)){ toast("디자인이 비어 있습니다. 그리거나 추천 디자인을 불러와 주세요."); return; }
     if (!teDb){ toast("이 화면에서는 저장할 수 없습니다."); return; }
-    var body = {word:TE.word, ko:TE.ko || "", kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, dmg:TE.dmg, dtype:TE.dtype, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3), updatedAt:Date.now()};
+    var body = {word:TE.word, ko:TE.ko || "", price:+TE.price || 1, kind:TE.kind, concept:TE.concept, mode:TE.mode, radius:TE.radius, dmg:TE.dmg, dtype:TE.dtype, mult:TE.mult, interval:TE.interval, range:TE.range, fx:TE.fx, lv5:TE.lv5, pixels:teEncode(TE.px), cost:teCost(TE), ratio:+teRatio(TE).toFixed(3), updatedAt:Date.now()};
     try { await teDb.collection("towers").doc(TE.word).set(body); toast("‘" + TE.word + "’ 타워를 저장했습니다."); }
     catch (e){ toast(e && e.code === "quota_exceeded" ? "저장 공간이 가득 찼습니다. 안 쓰는 타워를 지워 주세요." : "저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요."); }
   };
@@ -252,7 +304,7 @@ function teRenderSaved(){
     var row = document.createElement("div"); row.className = "row";
     var lo = document.createElement("button"); lo.className = "btn"; lo.textContent = "불러오기";
     lo.onclick = function(){ var fx = {}; if (t.fx && typeof t.fx === "object") TE_FX.forEach(function(f){ var v = +t.fx[f[0]]; if (v > 0) fx[f[0]] = Math.min(f[4], v); });
-      TE = teDefault(); TE.word = String(t.word || d.id).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); TE.kind = kind; TE.ko = String(t.ko || "").replace(/[^가-힣]/g, "").slice(0, 8); TE.concept = String(t.concept || ""); TE.mode = TE_MODES.some(function(m){ return m[0] === t.mode; }) ? t.mode : "single";
+      TE = teDefault(); TE.price = Math.min(10, Math.max(0.3, +t.price || 1)); TE.word = String(t.word || d.id).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12); TE.kind = kind; TE.ko = String(t.ko || "").replace(/[^가-힣]/g, "").slice(0, 8); TE.concept = String(t.concept || ""); TE.mode = TE_MODES.some(function(m){ return m[0] === t.mode; }) ? t.mode : "single";
       TE.radius = +t.radius || 0; TE.mult = +t.mult || 1; TE.dmg = +t.dmg > 0 ? Math.min(2000, +t.dmg) : +(teBaseAtk(TE) * TE.mult).toFixed(1); TE.dtype = ["physical","magic","true"].indexOf(t.dtype) >= 0 ? t.dtype : "physical"; TE.interval = +t.interval || 1; TE.range = +t.range || 2; TE.fx = fx; TE.lv5 = String(t.lv5 || ""); TE.px = px; TE.color = EL[kind].m;
       render("toweredit"); window.scrollTo(0, 0); toast("‘" + TE.word + "’ 타워를 불러왔습니다."); };
     var del = document.createElement("button"); del.className = "btn dan"; del.textContent = "삭제"; var armed = 0;
@@ -295,6 +347,70 @@ function towerFromData(t){
   x.mode = TE_MODES.some(function(m){ return m[0] === t.mode; }) ? t.mode : "single"; x.radius = Math.min(3, Math.max(0, +t.radius || 0));
   x.mult = Math.min(5, Math.max(0.1, +t.mult || 1)); x.interval = Math.min(4, Math.max(0.1, +t.interval || 1)); x.range = Math.min(7, Math.max(1, +t.range || 2));
   x.dmg = +t.dmg > 0 ? Math.min(2000, +t.dmg) : +(teBaseAtk(x) * x.mult).toFixed(1); x.dtype = ["physical","magic","true"].indexOf(t.dtype) >= 0 ? t.dtype : "physical";
-  x.fx = fx; x.lv5 = String(t.lv5 || "").slice(0, 120); x.px = t.pixels ? teDecode(t.pixels) : x.px; x.color = EL[kind].m;
+  x.fx = fx; x.price = Math.min(10, Math.max(0.3, +t.price || 1)); x.lv5 = String(t.lv5 || "").slice(0, 120); x.px = t.pixels ? teDecode(t.pixels) : x.px; x.color = EL[kind].m;
   return x;
+}
+
+/* ---------- 이미지 → 픽셀 (누끼 + 축소 + 색 줄이기) ---------- */
+function imgToPx(img, n, o){
+  var W = img.naturalWidth || img.width, H = img.naturalHeight || img.height; if (!W || !H) return null;
+  var sc = Math.min(1, 320 / Math.max(W, H)), w = Math.max(1, Math.round(W * sc)), h = Math.max(1, Math.round(H * sc));
+  var cv = document.createElement("canvas"); cv.width = w; cv.height = h; var x = cv.getContext("2d"); x.drawImage(img, 0, 0, w, h);
+  var d = x.getImageData(0, 0, w, h).data, A = new Uint8Array(w * h), i, k;
+  for (i = 0; i < w * h; i++) A[i] = d[i*4+3] >= 128 ? 1 : 0;
+  if (o.bg === "auto"){
+    /* 가장자리에서 가장 많은 색을 배경으로 보고, 가장자리에서 이어진 비슷한 색을 지운다 */
+    var cnt = {}, best = null, bc = 0;
+    function key(p){ return (d[p*4] >> 4) + "," + (d[p*4+1] >> 4) + "," + (d[p*4+2] >> 4); }
+    for (i = 0; i < w; i++){ [i, (h-1)*w + i].forEach(function(p){ if (A[p]){ var kk = key(p); cnt[kk] = (cnt[kk] || 0) + 1; } }); }
+    for (i = 0; i < h; i++){ [i*w, i*w + w - 1].forEach(function(p){ if (A[p]){ var kk = key(p); cnt[kk] = (cnt[kk] || 0) + 1; } }); }
+    for (k in cnt) if (cnt[k] > bc){ bc = cnt[k]; best = k; }
+    if (best){
+      var sr = 0, sg = 0, sb = 0, sn = 0;
+      for (i = 0; i < w * h; i++) if (A[i] && (i < w || i >= (h-1)*w || i % w === 0 || i % w === w-1) && key(i) === best){ sr += d[i*4]; sg += d[i*4+1]; sb += d[i*4+2]; sn++; }
+      var br = sr/sn, bgc = sg/sn, bb = sb/sn, tol = o.tol, seen = new Uint8Array(w * h), st = [];
+      function near(p){ var dr = d[p*4]-br, dg = d[p*4+1]-bgc, db = d[p*4+2]-bb; return Math.sqrt(dr*dr + dg*dg + db*db) <= tol; }
+      for (i = 0; i < w; i++){ st.push(i); st.push((h-1)*w + i); } for (i = 0; i < h; i++){ st.push(i*w); st.push(i*w + w - 1); }
+      while (st.length){ var p = st.pop(); if (seen[p]) continue; seen[p] = 1; if (!A[p] || !near(p)) { if (!A[p]){ var px0 = p % w, py0 = (p / w) | 0; if (px0 > 0) st.push(p-1); if (px0 < w-1) st.push(p+1); if (py0 > 0) st.push(p-w); if (py0 < h-1) st.push(p+w); } continue; }
+        A[p] = 0; var qx = p % w, qy = (p / w) | 0; if (qx > 0) st.push(p-1); if (qx < w-1) st.push(p+1); if (qy > 0) st.push(p-w); if (qy < h-1) st.push(p+w); }
+    }
+  } else if (o.bg === "none"){ for (i = 0; i < w * h; i++) A[i] = 1; }
+  var x0 = w, x1 = -1, y0 = h, y1 = -1;
+  for (i = 0; i < w * h; i++) if (A[i]){ var ax = i % w, ay = (i / w) | 0; if (ax < x0) x0 = ax; if (ax > x1) x1 = ax; if (ay < y0) y0 = ay; if (ay > y1) y1 = ay; }
+  if (x1 < 0) return null;
+  var bw = x1 - x0 + 1, bh = y1 - y0 + 1, ped = o.ped ? Math.round(n / 4) : 0, m = o.outline ? 1 : 0;
+  var aw = n - 2 * m, ah = n - ped - m, s2 = Math.min(aw / bw, ah / bh), tw = Math.max(1, Math.round(bw * s2)), th = Math.max(1, Math.round(bh * s2));
+  var ox = Math.floor((n - tw) / 2), oy = n - ped - th, cells = [], px = [];
+  for (i = 0; i < n * n; i++) px.push(null);
+  for (var ty = 0; ty < th; ty++) for (var tx = 0; tx < tw; tx++){
+    var sx0 = x0 + Math.floor(tx * bw / tw), sx1 = x0 + Math.max(Math.floor((tx + 1) * bw / tw), Math.floor(tx * bw / tw) + 1), sy0 = y0 + Math.floor(ty * bh / th), sy1 = y0 + Math.max(Math.floor((ty + 1) * bh / th), Math.floor(ty * bh / th) + 1);
+    var r = 0, g = 0, b = 0, c = 0, tot = 0;
+    for (var yy = sy0; yy < sy1; yy++) for (var xx = sx0; xx < sx1; xx++){ tot++; var q = yy * w + xx; if (A[q]){ r += d[q*4]; g += d[q*4+1]; b += d[q*4+2]; c++; } }
+    if (c && c / tot >= 0.35) cells.push({i: (oy + ty) * n + ox + tx, c: [r/c, g/c, b/c]});
+  }
+  if (!cells.length) return null;
+  /* 색 줄이기 (k-평균) */
+  var K = Math.min(o.cols, cells.length), cen = [];
+  var sorted = cells.slice().sort(function(a, b2){ return (a.c[0]*0.3 + a.c[1]*0.59 + a.c[2]*0.11) - (b2.c[0]*0.3 + b2.c[1]*0.59 + b2.c[2]*0.11); });
+  for (k = 0; k < K; k++) cen.push(sorted[Math.floor((k + 0.5) * sorted.length / K)].c.slice());
+  for (var itr = 0; itr < 10; itr++){
+    var acc = cen.map(function(){ return [0,0,0,0]; });
+    cells.forEach(function(e){ var bi = 0, bd = 1e9; cen.forEach(function(cc, ci){ var dd = (cc[0]-e.c[0])*(cc[0]-e.c[0]) + (cc[1]-e.c[1])*(cc[1]-e.c[1]) + (cc[2]-e.c[2])*(cc[2]-e.c[2]); if (dd < bd){ bd = dd; bi = ci; } }); e.k = bi; acc[bi][0] += e.c[0]; acc[bi][1] += e.c[1]; acc[bi][2] += e.c[2]; acc[bi][3]++; });
+    cen = cen.map(function(cc, ci){ return acc[ci][3] ? [acc[ci][0]/acc[ci][3], acc[ci][1]/acc[ci][3], acc[ci][2]/acc[ci][3]] : cc; });
+  }
+  function hex(cc){ return "#" + cc.map(function(v){ return ("0" + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2); }).join(""); }
+  var used = {};
+  cells.forEach(function(e){ var hc = hex(cen[e.k]); px[e.i] = hc; used[hc] = 1; });
+  if (o.outline){
+    var ol = [];
+    for (i = 0; i < n * (n - ped); i++){ if (px[i]) continue; var cx = i % n, cy = (i / n) | 0;
+      if ((cx > 0 && px[i-1] && px[i-1] !== "#1d2029") || (cx < n-1 && px[i+1] && px[i+1] !== "#1d2029") || (cy > 0 && px[i-n] && px[i-n] !== "#1d2029") || (cy < n-ped-1 && px[i+n] && px[i+n] !== "#1d2029")) ol.push(i); }
+    ol.forEach(function(p){ px[p] = "#1d2029"; });
+  }
+  if (ped){
+    var C = (EL[o.kind] || EL.plain), rowsC = [C.d, "#c9ccd3", "#8c909b", "#555a68"], widths = [8, 10, 12, 12];
+    for (var pr = 0; pr < ped; pr++){ var pi = Math.min(3, Math.floor(pr * 4 / ped)), pw = Math.round(widths[pi] * n / 16), px0b = Math.floor((n - pw) / 2);
+      for (var pxx = 0; pxx < pw; pxx++) px[(n - ped + pr) * n + px0b + pxx] = rowsC[pi]; }
+  }
+  return {px: px, colors: Object.keys(used).length, filled: cells.length};
 }
